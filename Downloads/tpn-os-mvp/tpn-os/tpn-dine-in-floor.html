@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="tpn-supabase.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+<meta name="theme-color" content="#1a0a00">
+<title>Tyo Paeng Nyo · Dine-In Floor</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=DM+Sans:wght@300;400;500;600&family=Lora:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --brick: #8B1A0E; --brick-dark: #6a1208; --brick-light: #c4392a;
+    --gold: #c8922a; --gold-light: #e8b84b;
+    --cream: #fdf6ec; --cream-dark: #f5ead8;
+    --charcoal: #1a0a00; --text: #2d1a0a; --text-muted: #7a5c3a;
+    --surface: #fff8f0; --border: #e8d5b8;
+    --green: #2d7a4f; --green-light: #e8f5e0;
+    --amber: #c8922a; --amber-light: #fff8e8;
+    --red: #8B1A0E; --red-light: #fff0ee;
+    --blue: #1a4a7a; --blue-light: #e8f0fa;
+    --gray: #9e9e9e; --gray-light: #f5f5f5;
+    --shadow: 0 2px 16px rgba(26,10,0,0.10);
+    --radius: 14px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; -webkit-tap-highlight-color: transparent; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--text); min-height: 100vh; }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    background: var(--charcoal); padding: 0 20px; height: 60px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+  }
+  .topbar-left { display: flex; align-items: center; gap: 12px; }
+  .topbar-logo { font-family: 'Playfair Display', serif; font-size: 18px; color: #fff; font-weight: 700; }
+  .topbar-sub { font-size: 12px; color: var(--gold-light); font-weight: 500; }
+  .topbar-right { display: flex; align-items: center; gap: 10px; }
+  .topbar-badge { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px; }
+  .topbar-btn { background: var(--brick); border: none; color: #fff; font-size: 12px; font-weight: 700; padding: 7px 14px; border-radius: 8px; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: background 0.2s; }
+  .topbar-btn:hover { background: var(--brick-light); }
+  .topbar-btn.secondary { background: rgba(255,255,255,0.1); }
+  .topbar-btn.secondary:hover { background: rgba(255,255,255,0.2); }
+
+  /* ── TAB NAV ── */
+  .tab-nav { background: #fff; border-bottom: 2px solid var(--border); display: flex; overflow-x: auto; scrollbar-width: none; }
+  .tab-nav::-webkit-scrollbar { display: none; }
+  .tab-btn { flex-shrink: 0; padding: 14px 20px; font-size: 13px; font-weight: 700; color: var(--text-muted); background: none; border: none; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; white-space: nowrap; font-family: 'DM Sans', sans-serif; transition: color 0.18s; display: flex; align-items: center; gap: 6px; }
+  .tab-btn.active { color: var(--brick); border-bottom-color: var(--brick); }
+  .tab-btn .badge { background: var(--brick); color: #fff; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 10px; min-width: 18px; text-align: center; }
+  .tab-btn .badge.amber { background: var(--amber); }
+  .tab-btn .badge.green { background: var(--green); }
+
+  /* ── CONTENT ── */
+  .content { padding: 20px 16px 100px; max-width: 1200px; margin: 0 auto; }
+
+  /* ── STAT TILES ── */
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+  @media (max-width: 700px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
+  .stat-tile { background: #fff; border-radius: var(--radius); padding: 16px; border: 1.5px solid var(--border); }
+  .stat-clickable { cursor: pointer; transition: all 0.18s; }
+  .stat-clickable:hover { transform: translateY(-2px); box-shadow: var(--shadow); border-color: var(--gold); }
+  .stat-clickable:active { transform: translateY(0); }
+  .stat-label { font-size: 11px; font-weight: 700; color: var(--text-muted); letter-spacing: 0.07em; text-transform: uppercase; margin-bottom: 6px; }
+  .stat-value { font-size: 26px; font-weight: 700; color: var(--text); font-family: 'Playfair Display', serif; }
+  .stat-sub { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+  .stat-tile.red .stat-value { color: var(--brick); }
+  .stat-tile.green .stat-value { color: var(--green); }
+  .stat-tile.amber .stat-value { color: var(--amber); }
+
+  /* ── BRANCH + TABLE MANAGEMENT ── */
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+  .section-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; }
+  .action-btn { background: var(--brick); color: #fff; border: none; padding: 9px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: background 0.2s; display: flex; align-items: center; gap: 6px; }
+  .action-btn:hover { background: var(--brick-light); }
+  .action-btn.secondary { background: #fff; color: var(--text); border: 1.5px solid var(--border); }
+  .action-btn.secondary:hover { border-color: var(--brick); color: var(--brick); }
+  .action-btn.green-btn { background: var(--green); }
+  .action-btn.green-btn:hover { background: #236040; }
+
+  /* ── BRANCH SELECTOR ── */
+  .branch-selector { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+  .branch-pill { padding: 8px 16px; border-radius: 24px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1.5px solid var(--border); background: #fff; color: var(--text-muted); transition: all 0.18s; }
+  .branch-pill.active { background: var(--charcoal); color: #fff; border-color: var(--charcoal); }
+
+  /* ── FLOOR MAP ── */
+  .floor-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+  .table-card {
+    background: #fff; border-radius: var(--radius); border: 2px solid var(--border);
+    overflow: hidden; cursor: pointer; transition: all 0.2s;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+  }
+  .table-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+  .table-card.occupied { border-color: var(--amber); }
+  .table-card.active-orders { border-color: var(--brick); }
+  .table-card.ready { border-color: var(--green); }
+  .table-card.bill-requested { border-color: var(--blue); animation: borderPulse 1.5s infinite; }
+  @keyframes borderPulse { 0%,100%{border-color:var(--blue)} 50%{border-color:#5090d0} }
+
+  .table-header { padding: 12px 14px 10px; display: flex; align-items: center; justify-content: space-between; }
+  .table-num { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: var(--text); }
+  .table-status-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot-empty { background: var(--gray); }
+  .dot-occupied { background: var(--amber); }
+  .dot-active { background: var(--brick); animation: pulse 1.5s infinite; }
+  .dot-ready { background: var(--green); }
+  .dot-bill { background: var(--blue); animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  .table-body { padding: 0 14px 14px; }
+  .table-status-label { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 8px; }
+  .status-empty { color: var(--gray); }
+  .status-occupied { color: var(--amber); }
+  .status-active { color: var(--brick); }
+  .status-ready { color: var(--green); }
+  .status-bill { color: var(--blue); }
+
+  .table-guest { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+  .table-meta { font-size: 11px; color: var(--text-muted); margin-bottom: 10px; }
+  .table-order-count { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text); margin-bottom: 8px; }
+  .table-total { font-size: 15px; font-weight: 700; color: var(--brick); margin-bottom: 10px; }
+  .table-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+  .t-btn { flex: 1; padding: 7px 0; border-radius: 8px; font-size: 11px; font-weight: 700; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.18s; min-width: 60px; }
+  .t-btn.view { background: var(--cream-dark); color: var(--text); }
+  .t-btn.view:hover { background: var(--border); }
+  .t-btn.advance { background: var(--brick); color: #fff; }
+  .t-btn.advance:hover { background: var(--brick-light); }
+  .t-btn.clear { background: var(--gray-light); color: var(--gray); }
+  .t-btn.clear:hover { background: #e0e0e0; }
+  .t-btn.bill { background: var(--blue); color: #fff; }
+  .t-btn.bill:hover { background: #1a3a6a; }
+
+  .qr-badge { display: inline-flex; align-items: center; gap: 4px; background: var(--cream-dark); border-radius: 20px; padding: 4px 10px; font-size: 10px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; cursor: pointer; }
+  .qr-badge:hover { background: var(--border); }
+
+  /* ── ORDERS LIST ── */
+  .orders-filter-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+  .filter-chip { padding: 7px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1.5px solid var(--border); background: #fff; color: var(--text-muted); transition: all 0.18s; }
+  .filter-chip.active { background: var(--charcoal); color: #fff; border-color: var(--charcoal); }
+  .orders-grid { display: flex; flex-direction: column; gap: 10px; }
+  .order-card { background: #fff; border-radius: var(--radius); border: 1.5px solid var(--border); padding: 16px; transition: border-color 0.18s; }
+  .order-card.received { border-left: 4px solid var(--amber); }
+  .order-card.preparing { border-left: 4px solid var(--brick); }
+  .order-card.ready { border-left: 4px solid var(--green); }
+  .order-card.done { border-left: 4px solid var(--gray); opacity: 0.75; }
+  .order-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; gap: 10px; }
+  .order-card-ref { font-size: 12px; color: var(--text-muted); font-weight: 600; letter-spacing: 0.05em; }
+  .order-card-table { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 700; }
+  .order-status-pill { font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.06em; text-transform: uppercase; flex-shrink: 0; }
+  .pill-received { background: var(--amber-light); color: var(--amber); }
+  .pill-preparing { background: var(--red-light); color: var(--brick); }
+  .pill-ready { background: var(--green-light); color: var(--green); }
+  .pill-done { background: var(--gray-light); color: var(--gray); }
+  .order-guest-info { display: flex; gap: 16px; font-size: 12px; color: var(--text-muted); margin-bottom: 10px; flex-wrap: wrap; }
+  .order-items-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+  .order-item-row { display: flex; justify-content: space-between; font-size: 13px; }
+  .order-item-name { color: var(--text); }
+  .order-item-price { color: var(--text-muted); font-weight: 600; }
+  .order-flags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+  .order-flag { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
+  .flag-allergy { background: #ffebee; color: #c62828; }
+  .flag-req { background: var(--amber-light); color: var(--amber); }
+  .flag-bill { background: var(--blue-light); color: var(--blue); }
+  .order-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 10px; border-top: 1px solid var(--border); }
+  .order-total { font-size: 16px; font-weight: 700; color: var(--brick); }
+  .order-time { font-size: 11px; color: var(--text-muted); }
+  .order-actions { display: flex; gap: 8px; }
+  .o-btn { padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 700; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: background 0.18s; }
+  .o-btn.advance { background: var(--brick); color: #fff; }
+  .o-btn.advance:hover { background: var(--brick-light); }
+  .o-btn.done-btn { background: var(--green); color: #fff; }
+  .o-btn.view { background: var(--cream-dark); color: var(--text); }
+
+  /* ── SETTINGS PANEL ── */
+  .settings-card { background: #fff; border-radius: var(--radius); border: 1.5px solid var(--border); padding: 20px; margin-bottom: 16px; }
+  .settings-card-title { font-size: 13px; font-weight: 700; color: var(--text-muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+  .settings-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); gap: 12px; }
+  .settings-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .settings-label { font-size: 14px; font-weight: 600; }
+  .settings-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .settings-input { padding: 8px 12px; border-radius: 8px; border: 1.5px solid var(--border); font-size: 14px; font-family: 'DM Sans', sans-serif; color: var(--text); outline: none; width: 90px; text-align: center; }
+  .settings-input:focus { border-color: var(--brick); }
+  .toggle-switch { position: relative; width: 46px; height: 26px; flex-shrink: 0; }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider { position: absolute; inset: 0; background: #ccc; border-radius: 13px; cursor: pointer; transition: 0.3s; }
+  .toggle-slider::before { content: ''; position: absolute; height: 20px; width: 20px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: 0.3s; }
+  .toggle-switch input:checked + .toggle-slider { background: var(--brick); }
+  .toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
+  .branch-list { display: flex; flex-direction: column; gap: 10px; }
+  .branch-item { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 10px; background: var(--cream); border: 1px solid var(--border); }
+  .branch-item-name { flex: 1; font-size: 14px; font-weight: 600; }
+  .branch-item-tables { font-size: 12px; color: var(--text-muted); }
+  .add-branch-form { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+  .add-branch-form input { flex: 1; min-width: 140px; padding: 10px 12px; border-radius: 8px; border: 1.5px solid var(--border); font-size: 14px; font-family: 'DM Sans', sans-serif; outline: none; }
+  .add-branch-form input:focus { border-color: var(--brick); }
+  .menu-manager-list { display: flex; flex-direction: column; gap: 8px; }
+  .menu-item-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; background: var(--cream); border: 1px solid var(--border); }
+  .menu-item-emoji { font-size: 24px; flex-shrink: 0; }
+  .menu-item-info { flex: 1; }
+  .menu-item-name { font-size: 14px; font-weight: 600; }
+  .menu-item-price { font-size: 12px; color: var(--brick); font-weight: 700; }
+  .avail-toggle { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+  .avail-toggle.on { background: var(--green-light); color: var(--green); }
+  .avail-toggle.off { background: var(--gray-light); color: var(--gray); }
+
+  /* ── MODAL ── */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 500; display: flex; align-items: center; justify-content: center; padding: 20px; opacity: 0; pointer-events: none; transition: opacity 0.22s; }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal-box { background: #fff; border-radius: 20px; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; }
+  .modal-top { padding: 20px 24px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; }
+  .modal-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; }
+  .modal-close { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--text-muted); }
+  .modal-content { padding: 20px 24px; }
+  .modal-footer { padding: 14px 24px 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
+  .modal-btn { padding: 10px 22px; border-radius: 10px; font-size: 14px; font-weight: 700; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+  .modal-btn.primary { background: var(--brick); color: #fff; }
+  .modal-btn.secondary { background: var(--cream-dark); color: var(--text); }
+  .order-detail-items { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+  .detail-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px; background: var(--cream); border-radius: 10px; }
+  .detail-item-emoji { font-size: 24px; }
+  .detail-item-info { flex: 1; }
+  .detail-item-name { font-size: 14px; font-weight: 700; }
+  .detail-item-meta { font-size: 12px; color: var(--text-muted); }
+  .detail-item-price { font-size: 14px; font-weight: 700; color: var(--brick); }
+
+  /* ── QR MODAL ── */
+  .qr-display { text-align: center; padding: 10px 0 20px; }
+  .qr-placeholder { width: 180px; height: 180px; border: 3px dashed var(--border); border-radius: 12px; margin: 0 auto 14px; display: flex; align-items: center; justify-content: center; font-size: 72px; background: var(--cream); }
+  .qr-url { font-size: 11px; color: var(--text-muted); word-break: break-all; background: var(--cream-dark); padding: 8px 12px; border-radius: 8px; font-family: monospace; }
+
+  /* ── TOAST ── */
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--charcoal); color: #fff; padding: 12px 24px; border-radius: 30px; font-size: 14px; font-weight: 600; z-index: 999; opacity: 0; transition: all 0.3s; pointer-events: none; white-space: nowrap; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── CALL ALERT ── */
+  .call-alert { position: fixed; top: 70px; right: 16px; z-index: 600; background: var(--blue); color: #fff; border-radius: 14px; padding: 14px 18px; max-width: 280px; box-shadow: 0 6px 24px rgba(0,0,0,0.25); display: none; animation: slideIn 0.3s; }
+  .call-alert.show { display: block; }
+  @keyframes slideIn { from { transform: translateX(30px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  .call-alert-title { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+  .call-alert-sub { font-size: 12px; opacity: 0.85; margin-bottom: 10px; }
+  .call-alert-dismiss { background: rgba(255,255,255,0.2); border: none; color: #fff; font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 8px; cursor: pointer; }
+
+  @media (max-width: 640px) {
+    .stat-value { font-size: 22px; }
+    .floor-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .tab-btn { padding: 12px 14px; font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="topbar-left">
+    <div>
+      <div class="topbar-logo">Tyo Paeng Nyo</div>
+      <div class="topbar-sub">Dine-In Floor · <span id="current-branch-label">Las Piñas</span></div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="topbar-badge" id="role-badge">Manager</div>
+    <button class="topbar-btn secondary" onclick="window.location.reload()">↺ Refresh</button>
+    <button class="topbar-btn" onclick="openAddTableModal()">+ Table</button>
+  </div>
+</header>
+
+<!-- TABS -->
+<div class="tab-nav" id="tab-nav">
+  <button class="tab-btn active" onclick="showTab('floor')" id="tab-floor">🪑 Floor Map <span class="badge" id="badge-occupied">0</span></button>
+  <button class="tab-btn" onclick="showTab('orders')" id="tab-orders">📋 Dine-In Orders <span class="badge amber" id="badge-orders">0</span></button>
+  <button class="tab-btn" onclick="showTab('menu')" id="tab-menu">🍽️ Menu Status</button>
+  <button class="tab-btn" onclick="showTab('settings')" id="tab-settings">⚙️ Settings</button>
+</div>
+
+<!-- CONTENT -->
+<div class="content" id="main-content"></div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal" onclick="closeModal(event)">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-top">
+      <div class="modal-title" id="modal-title">Details</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-content" id="modal-content"></div>
+    <div class="modal-footer" id="modal-footer"></div>
+  </div>
+</div>
+
+<!-- CALL STAFF ALERT -->
+<div class="call-alert" id="call-alert">
+  <div class="call-alert-title">🤚 Staff Requested</div>
+  <div class="call-alert-sub" id="call-alert-sub">Table — is requesting assistance or the bill.</div>
+  <button class="call-alert-dismiss" onclick="dismissCallAlert()">Dismiss</button>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── STATE ───
+const ROLE = 'manager'; // In real system, this comes from login
+let currentTab = 'floor';
+let currentBranch = 'Las Piñas';
+let orderFilter = 'all';
+let callAlertTimeout = null;
+
+// Branches with configurable tables
+let branches = [
+  { id: 'lasPinas', name: 'Las Piñas', tables: 8, active: true },
+  { id: 'bacoor', name: 'Bacoor', tables: 6, active: true },
+  { id: 'tgt', name: 'TGT Concession', tables: 4, active: true },
+];
+
+// Tables per branch — dynamically generated
+let tableStates = {}; // keyed by branchId_tableNum
+
+function initTableStates() {
+  branches.forEach(branch => {
+    for (let i = 1; i <= branch.tables; i++) {
+      const key = branch.id + '_' + i;
+      if (!tableStates[key]) {
+        tableStates[key] = { status: 'empty', guest: null, pax: 0, orders: [], sessionTotal: 0, billRequested: false, openedAt: null };
+      }
+    }
+  });
+}
+
+// Sample incoming orders (simulating from QR menu)
+let dineInOrders = [
+  {
+    ref: 'TPN-A1B2C3', table: 2, branch: 'Las Piñas', name: 'Maria Santos', pax: '3',
+    allergies: ['Shellfish allergy'], specialReq: 'Extra rice please',
+    items: [
+      { name: 'Tapsilog', emoji: '🍳', qty: 2, price: 139, variant: null },
+      { name: 'Chicken Adobo', emoji: '🍗', qty: 1, price: 289, variant: '2-3 pax' },
+      { name: 'Buko Juice', emoji: '🥥', qty: 3, price: 79, variant: null },
+    ],
+    total: 604, status: 'preparing', timestamp: new Date(Date.now() - 12*60000).toISOString(),
+    billRequested: false, sessionId: 'SES-ABC'
+  },
+  {
+    ref: 'TPN-D4E5F6', table: 5, branch: 'Las Piñas', name: 'Reyes Family', pax: '5',
+    allergies: [], specialReq: '',
+    items: [
+      { name: 'Lechon Kawali', emoji: '🥩', qty: 1, price: 349, variant: '2-3 pax' },
+      { name: 'Sinigang na Baboy', emoji: '🍲', qty: 1, price: 329, variant: '2-3 pax' },
+      { name: 'Lumpiang Shanghai', emoji: '🥢', qty: 2, price: 149, variant: null },
+      { name: 'Softdrinks', emoji: '🥤', qty: 5, price: 55, variant: null },
+    ],
+    total: 1102, status: 'received', timestamp: new Date(Date.now() - 4*60000).toISOString(),
+    billRequested: false, sessionId: 'SES-DEF'
+  },
+  {
+    ref: 'TPN-G7H8I9', table: 1, branch: 'Las Piñas', name: 'Carlo Mendoza', pax: '2',
+    allergies: ['No pork (Halal)'], specialReq: 'Maanghang please',
+    items: [
+      { name: 'Chicken Inasal', emoji: '🔥', qty: 1, price: 319, variant: '2-3 pax' },
+      { name: 'Sago at Gulaman', emoji: '🧋', qty: 2, price: 65, variant: null },
+    ],
+    total: 449, status: 'ready', timestamp: new Date(Date.now() - 25*60000).toISOString(),
+    billRequested: true, sessionId: 'SES-GHI'
+  },
+];
+
+// Seed table states from sample orders
+function seedTableStates() {
+  dineInOrders.forEach(order => {
+    const branch = branches.find(b => b.name === order.branch);
+    if (!branch) return;
+    const key = branch.id + '_' + order.table;
+    const tbl = tableStates[key];
+    if (!tbl) return;
+    if (tbl.status === 'empty') {
+      tbl.status = order.status === 'ready' ? 'ready' : 'active-orders';
+      tbl.guest = order.name;
+      tbl.pax = parseInt(order.pax);
+      tbl.openedAt = order.timestamp;
+    }
+    tbl.orders.push(order);
+    tbl.sessionTotal += order.total;
+    if (order.billRequested) tbl.billRequested = true;
+    if (order.billRequested) tbl.status = 'bill-requested';
+  });
+}
+
+// Menu availability
+let menuAvailability = [
+  { id: 'tap', name: 'Tapsilog', emoji: '🍳', available: true, cat: 'Silogs', price: '₱139' },
+  { id: 'tor', name: 'Tosilog', emoji: '🥓', available: true, cat: 'Silogs', price: '₱129' },
+  { id: 'long', name: 'Longsilog', emoji: '🌭', available: true, cat: 'Silogs', price: '₱125' },
+  { id: 'bang', name: 'Bangsilog', emoji: '🐟', available: true, cat: 'Silogs', price: '₱135' },
+  { id: 'adb', name: 'Chicken Adobo', emoji: '🍗', available: true, cat: 'Chicken', price: '₱289+' },
+  { id: 'inasal', name: 'Chicken Inasal', emoji: '🔥', available: true, cat: 'Chicken', price: '₱319+' },
+  { id: 'tinola', name: 'Chicken Tinola', emoji: '🍲', available: true, cat: 'Chicken', price: '₱299+' },
+  { id: 'lechon', name: 'Lechon Kawali', emoji: '🥩', available: true, cat: 'Pork', price: '₱349+' },
+  { id: 'sini', name: 'Sinigang na Baboy', emoji: '🍲', available: true, cat: 'Pork', price: '₱329+' },
+  { id: 'kare', name: 'Kare-Kare', emoji: '🥜', available: false, cat: 'Pork', price: '₱359+' },
+  { id: 'sinigmahi', name: 'Sinigang na Hipon', emoji: '🦐', available: true, cat: 'Seafood', price: '₱349+' },
+  { id: 'lumpia', name: 'Lumpiang Shanghai', emoji: '🥢', available: true, cat: 'Merienda', price: '₱149' },
+  { id: 'pancit', name: 'Pancit Canton', emoji: '🍝', available: true, cat: 'Merienda', price: '₱159' },
+  { id: 'buko', name: 'Buko Juice', emoji: '🥥', available: true, cat: 'Drinks', price: '₱79' },
+  { id: 'coke', name: 'Softdrinks', emoji: '🥤', available: true, cat: 'Drinks', price: '₱55' },
+];
+
+// ─── INIT ───
+document.addEventListener('DOMContentLoaded', async () => {
+  initTableStates();
+  seedTableStates();
+  updateBadges();
+  renderTab();
+  await loadOrdersFromSupabase();
+  subscribeToRealtime();
+  checkCallStaff();
+});
+
+// ─── Cache: DB branch UUID lookup ───
+const branchUuidCache = {}; // { 'laspinas': uuid }
+async function ensureBranchUuids() {
+  const dbBranches = await TPN.getBranches();
+  dbBranches.forEach(b => branchUuidCache[b.code] = b.id);
+  // Map branches array (which uses 'laspinas' etc as string ids) to DB UUIDs
+}
+
+// ─── LOAD ORDERS + TABLE SIGNALS FROM SUPABASE ───
+async function loadOrdersFromSupabase() {
+  try {
+    await ensureBranchUuids();
+    for (const branch of branches) {
+      const branchUuid = branchUuidCache[branch.id];
+      if (!branchUuid) continue;
+      const orders = await TPN.listActiveOrders(branchUuid);
+      orders.forEach(o => integrateOrder(o, branch));
+      // Load current signal state on tables
+      const tables = await TPN.getTablesForBranch(branchUuid);
+      tables.forEach(t => {
+        const key = branch.id + '_' + t.table_number;
+        if (tableStates[key]) {
+          if (t.call_staff_at) tableStates[key].billRequested = true;
+        }
+      });
+    }
+    updateBadges();
+    renderTab();
+  } catch(e) { console.error('loadOrdersFromSupabase failed:', e); }
+}
+
+// ─── REALTIME SUBSCRIPTIONS ───
+function subscribeToRealtime() {
+  // Subscribe to orders across all branches
+  TPN.subscribeOrders(null, async (payload) => {
+    if (payload.eventType === 'INSERT') {
+      const order = payload.new;
+      // Find which branch
+      const branch = branches.find(b => branchUuidCache[b.id] === order.branch_id);
+      if (!branch) return;
+      // Fetch full order with items
+      try {
+        const full = await TPN.getOrder(order.id);
+        integrateOrder(full, branch);
+        showToast(`🔔 New order from Table ${full.restaurant_tables?.table_number || '?'}!`);
+        updateBadges();
+        if (currentTab === 'floor' || currentTab === 'orders') renderTab();
+      } catch(e) { console.error('fetch new order failed:', e); }
+    } else if (payload.eventType === 'UPDATE') {
+      // Update existing order status
+      const updated = payload.new;
+      const existing = dineInOrders.find(o => o.dbId === updated.id);
+      if (existing) existing.status = updated.status;
+      updateBadges();
+      if (currentTab === 'floor' || currentTab === 'orders') renderTab();
+    }
+  });
+
+  // Subscribe to restaurant_tables for call-staff / bill-request signals
+  const chan = sb.channel('restaurant_tables:all')
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'restaurant_tables' }, (payload) => {
+      const t = payload.new;
+      const branch = branches.find(b => branchUuidCache[b.id] === t.branch_id);
+      if (!branch) return;
+      const key = branch.id + '_' + t.table_number;
+      // Detect signal transitions
+      const wasCall = payload.old?.call_staff_at, isCall = t.call_staff_at;
+      const wasBill = payload.old?.bill_requested_at, isBill = t.bill_requested_at;
+      if (!wasCall && isCall) {
+        showCallAlert(t.table_number, branch.name);
+        if (tableStates[key]) tableStates[key].billRequested = true;
+      }
+      if (!wasBill && isBill) {
+        showToast(`💳 Table ${t.table_number}: bill request (${t.bill_payment_method || '?'})`);
+        if (tableStates[key]) tableStates[key].billRequested = true;
+      }
+      updateBadges();
+      if (currentTab === 'floor') renderTab();
+    })
+    .subscribe();
+}
+
+// Integrate a DB-shaped order into the local in-memory model
+function integrateOrder(dbOrder, branch) {
+  if (dineInOrders.find(o => o.dbId === dbOrder.id)) return;
+  const uiOrder = {
+    ref:       dbOrder.order_number,
+    dbId:      dbOrder.id,
+    table:     dbOrder.restaurant_tables?.table_number || null,
+    branch:    branch.name,
+    branchId:  branch.id,
+    name:      dbOrder.customer_name || 'Guest',
+    pax:       1,
+    specialReq: dbOrder.notes || '',
+    items:     (dbOrder.order_items || []).map(oi => ({
+                  name: oi.name_snapshot, qty: oi.quantity, price: oi.unit_price
+                })),
+    total:     dbOrder.total,
+    timestamp: dbOrder.placed_at,
+    status:    dbOrder.status,
+    type:      dbOrder.order_type
+  };
+  dineInOrders.push(uiOrder);
+  if (uiOrder.table) {
+    const key = branch.id + '_' + uiOrder.table;
+    const tbl = tableStates[key];
+    if (tbl) {
+      tbl.status = 'active-orders';
+      tbl.guest = uiOrder.name;
+      tbl.pax = uiOrder.pax;
+      tbl.openedAt = tbl.openedAt || uiOrder.timestamp;
+      tbl.orders.push(uiOrder);
+      tbl.sessionTotal += uiOrder.total;
+    }
+  }
+}
+
+function checkCallStaff() {
+  // Also listen for postMessage from QR menu opened in same tab/iframe
+  window.addEventListener('message', (e) => {
+    if (e.data?.type === 'TPN_DINE_IN_ORDER') {
+      const order = e.data.order;
+      if (!dineInOrders.find(o => o.ref === order.ref)) {
+        dineInOrders.push(order);
+        showToast(`🔔 New order: Table ${order.table}!`);
+        updateBadges();
+        if (currentTab === 'floor' || currentTab === 'orders') renderTab();
+      }
+    }
+  });
+}
+
+function showCallAlert(table, branch) {
+  const el = document.getElementById('call-alert');
+  document.getElementById('call-alert-sub').textContent = `Table ${table} (${branch}) is requesting assistance or the bill.`;
+  el.classList.add('show');
+  clearTimeout(callAlertTimeout);
+  callAlertTimeout = setTimeout(() => el.classList.remove('show'), 8000);
+}
+function dismissCallAlert() { document.getElementById('call-alert').classList.remove('show'); }
+
+// ─── TABS ───
+function showTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  renderTab();
+}
+
+function renderTab() {
+  const el = document.getElementById('main-content');
+  if (currentTab === 'floor') el.innerHTML = renderFloor();
+  else if (currentTab === 'orders') el.innerHTML = renderOrders();
+  else if (currentTab === 'menu') el.innerHTML = renderMenuStatus();
+  else if (currentTab === 'settings') el.innerHTML = renderSettings();
+  attachEvents();
+}
+
+function updateBadges() {
+  const branch = branches.find(b => b.name === currentBranch);
+  if (!branch) return;
+  let occupied = 0;
+  for (let i = 1; i <= branch.tables; i++) {
+    const key = branch.id + '_' + i;
+    if (tableStates[key]?.status !== 'empty') occupied++;
+  }
+  document.getElementById('badge-occupied').textContent = occupied;
+  const activeOrders = dineInOrders.filter(o => o.branch === currentBranch && o.status !== 'done').length;
+  document.getElementById('badge-orders').textContent = activeOrders;
+}
+
+// ─── FLOOR MAP ───
+function renderFloor() {
+  const branch = branches.find(b => b.name === currentBranch);
+  if (!branch) return '<p>No branch selected.</p>';
+
+  // Stats
+  let occupied = 0, activeOrd = 0, totalRev = 0, billReq = 0;
+  for (let i = 1; i <= branch.tables; i++) {
+    const key = branch.id + '_' + i;
+    const tbl = tableStates[key];
+    if (!tbl) continue;
+    if (tbl.status !== 'empty') { occupied++; totalRev += tbl.sessionTotal; }
+    if (tbl.billRequested) billReq++;
+    activeOrd += tbl.orders.filter(o => o.status !== 'done').length;
+  }
+
+  let html = `
+  <div class="stat-grid">
+    <div class="stat-tile stat-clickable" onclick="showOccupiedTablesList('${branch.id}')"><div class="stat-label">Tables Occupied</div><div class="stat-value">${occupied}/${branch.tables}</div><div class="stat-sub">Tap to view occupied →</div></div>
+    <div class="stat-tile red stat-clickable" onclick="showTab('orders')"><div class="stat-label">Active Orders</div><div class="stat-value">${activeOrd}</div><div class="stat-sub">Tap to view orders →</div></div>
+    <div class="stat-tile amber stat-clickable" onclick="showBillRequestedList('${branch.id}')"><div class="stat-label">Bill Requested</div><div class="stat-value">${billReq}</div><div class="stat-sub">Tap to view tables →</div></div>
+    <div class="stat-tile green stat-clickable" onclick="showRevenueModal(${totalRev})"><div class="stat-label">Session Revenue</div><div class="stat-value">₱${totalRev.toLocaleString()}</div><div class="stat-sub">Tap for breakdown →</div></div>
+  </div>
+  <div class="section-header">
+    <div class="section-title">Floor Map</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="action-btn secondary" onclick="openAddTableModal()">+ Add Table</button>
+    </div>
+  </div>
+  <div class="branch-selector" id="branch-selector">`;
+  branches.filter(b => b.active).forEach(b => {
+    html += `<div class="branch-pill ${b.name === currentBranch ? 'active' : ''}" onclick="switchBranch('${b.name}')">${b.name}</div>`;
+  });
+  html += `</div><div class="floor-grid">`;
+
+  for (let i = 1; i <= branch.tables; i++) {
+    const key = branch.id + '_' + i;
+    const tbl = tableStates[key] || { status: 'empty' };
+    const status = tbl.status;
+
+    const statusMap = {
+      'empty': { label: 'Empty', dotClass: 'dot-empty', labelClass: 'status-empty', cardClass: '' },
+      'occupied': { label: 'Occupied', dotClass: 'dot-occupied', labelClass: 'status-occupied', cardClass: 'occupied' },
+      'active-orders': { label: 'Active Orders', dotClass: 'dot-active', labelClass: 'status-active', cardClass: 'active-orders' },
+      'ready': { label: 'Food Ready', dotClass: 'dot-ready', labelClass: 'status-ready', cardClass: 'ready' },
+      'bill-requested': { label: '💳 Bill Requested', dotClass: 'dot-bill', labelClass: 'status-bill', cardClass: 'bill-requested' },
+    };
+    const s = statusMap[status] || statusMap['empty'];
+    const tableOrders = tbl.orders?.filter(o => o.status !== 'done') || [];
+    const elapsed = tbl.openedAt ? Math.floor((Date.now() - new Date(tbl.openedAt)) / 60000) + 'm' : '';
+
+    const qrUrl = `tpn-table-menu.html?table=${i}&branch=${encodeURIComponent(branch.name)}`;
+
+    html += `<div class="table-card ${s.cardClass}" onclick="openTableModal(${i}, '${branch.id}')">
+      <div class="table-header">
+        <div class="table-num">Table ${i}</div>
+        <div class="table-status-dot ${s.dotClass}"></div>
+      </div>
+      <div class="table-body">
+        <div class="table-status-label ${s.labelClass}">${s.label}</div>
+        ${status !== 'empty' ? `
+          <div class="table-guest">${tbl.guest || '—'}</div>
+          <div class="table-meta">${tbl.pax} guest(s) · ${elapsed} ago</div>
+          <div class="table-order-count">📋 ${tableOrders.length} active order(s)</div>
+          <div class="table-total">₱${(tbl.sessionTotal || 0).toLocaleString('en', {minimumFractionDigits:2})}</div>
+        ` : `<div style="padding:10px 0;text-align:center;font-size:24px;color:var(--border)">🪑</div>`}
+        <div class="qr-badge" onclick="event.stopPropagation(); openQRModal(${i}, '${branch.name}', '${qrUrl}')">📱 QR Code</div>
+        <div class="table-actions">
+          ${status !== 'empty' ? `
+            <button class="t-btn view" onclick="event.stopPropagation(); openTableModal(${i}, '${branch.id}')">View</button>
+            ${tbl.billRequested ? `<button class="t-btn bill" onclick="event.stopPropagation(); closeTable(${i}, '${branch.id}')">Close Table</button>` : `<button class="t-btn advance" onclick="event.stopPropagation(); markBillReady(${i}, '${branch.id}')">Bill</button>`}
+            <button class="t-btn clear" onclick="event.stopPropagation(); clearTable(${i}, '${branch.id}')">Clear</button>
+          ` : `<button class="t-btn view" onclick="event.stopPropagation(); openQRModal(${i}, '${branch.name}', '${qrUrl}')">Open QR</button>`}
+        </div>
+      </div>
+    </div>`;
+  }
+
+  html += `</div>`;
+  return html;
+}
+
+// ─── ORDERS ───
+function renderOrders() {
+  const filters = ['all', 'received', 'preparing', 'ready', 'done'];
+  const filterLabels = { all: 'All', received: '🟡 Received', preparing: '🔴 Preparing', ready: '🟢 Ready', done: '✅ Done' };
+
+  const filtered = dineInOrders.filter(o => {
+    if (o.branch !== currentBranch) return false;
+    if (orderFilter === 'all') return o.status !== 'done';
+    if (orderFilter === 'done') return o.status === 'done';
+    return o.status === orderFilter;
+  }).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+  let html = `
+  <div class="section-header">
+    <div class="section-title">Dine-In Orders</div>
+    <div style="font-size:13px;color:var(--text-muted)">${filtered.length} orders shown</div>
+  </div>
+  <div class="orders-filter-bar">`;
+  filters.forEach(f => {
+    html += `<div class="filter-chip ${orderFilter === f ? 'active' : ''}" onclick="setOrderFilter('${f}')">${filterLabels[f]}</div>`;
+  });
+  html += `</div><div class="orders-grid">`;
+
+  if (!filtered.length) {
+    html += `<div style="text-align:center;padding:60px;color:var(--text-muted);font-family:'Lora',serif;font-style:italic">No orders to show.</div>`;
+  }
+
+  filtered.forEach(order => {
+    const pillClass = { received: 'pill-received', preparing: 'pill-preparing', ready: 'pill-ready', done: 'pill-done' }[order.status] || '';
+    const pillLabel = { received: 'Received', preparing: 'Preparing', ready: 'Ready', done: 'Done' }[order.status] || '';
+    const elapsed = Math.floor((Date.now() - new Date(order.timestamp)) / 60000);
+
+    html += `<div class="order-card ${order.status}">
+      <div class="order-card-header">
+        <div>
+          <div class="order-card-ref">${order.ref}</div>
+          <div class="order-card-table">Table ${order.table}</div>
+        </div>
+        <span class="order-status-pill ${pillClass}">${pillLabel}</span>
+      </div>
+      <div class="order-guest-info">
+        <span>👤 ${order.name}</span>
+        <span>👥 ${order.pax} pax</span>
+        <span>🕒 ${elapsed}m ago</span>
+      </div>
+      <div class="order-items-list">`;
+    order.items.forEach(item => {
+      html += `<div class="order-item-row">
+        <span class="order-item-name">${item.emoji} ${item.qty}× ${item.name}${item.variant ? ' (' + item.variant + ')' : ''}</span>
+        <span class="order-item-price">₱${(item.price * item.qty).toFixed(2)}</span>
+      </div>`;
+    });
+    html += `</div>`;
+
+    if (order.allergies?.length || order.specialReq) {
+      html += `<div class="order-flags">`;
+      order.allergies?.forEach(a => { html += `<span class="order-flag flag-allergy">⚠️ ${a}</span>`; });
+      if (order.specialReq) html += `<span class="order-flag flag-req">📝 ${order.specialReq}</span>`;
+      if (order.billRequested) html += `<span class="order-flag flag-bill">💳 Bill Requested</span>`;
+      html += `</div>`;
+    }
+
+    html += `<div class="order-footer">
+      <div>
+        <div class="order-total">₱${order.total.toFixed(2)}</div>
+      </div>
+      <div class="order-actions">
+        <button class="o-btn view" onclick="openOrderModal('${order.ref}')">View</button>
+        ${order.status === 'received' ? `<button class="o-btn advance" onclick="advanceOrder('${order.ref}')">→ Preparing</button>` : ''}
+        ${order.status === 'preparing' ? `<button class="o-btn done-btn" onclick="advanceOrder('${order.ref}')">→ Ready</button>` : ''}
+        ${order.status === 'ready' ? `<button class="o-btn advance" onclick="advanceOrder('${order.ref}')">✓ Served</button>` : ''}
+      </div>
+    </div></div>`;
+  });
+
+  html += `</div>`;
+  return html;
+}
+
+// ─── MENU STATUS ───
+function renderMenuStatus() {
+  const avail = menuAvailability.filter(i => i.available).length;
+  const unavail = menuAvailability.filter(i => !i.available).length;
+
+  let html = `
+  <div class="stat-grid" style="grid-template-columns:repeat(3,1fr)">
+    <div class="stat-tile green"><div class="stat-label">Available</div><div class="stat-value">${avail}</div></div>
+    <div class="stat-tile red"><div class="stat-label">Unavailable</div><div class="stat-value">${unavail}</div></div>
+    <div class="stat-tile"><div class="stat-label">Total Items</div><div class="stat-value">${menuAvailability.length}</div></div>
+  </div>
+  <div class="section-header"><div class="section-title">Menu Availability</div><div style="font-size:12px;color:var(--text-muted)">Toggle items on/off instantly — updates customer menu</div></div>
+  <div class="menu-manager-list">`;
+  menuAvailability.forEach((item, idx) => {
+    html += `<div class="menu-item-row">
+      <div class="menu-item-emoji">${item.emoji}</div>
+      <div class="menu-item-info">
+        <div class="menu-item-name">${item.name}</div>
+        <div style="font-size:11px;color:var(--text-muted)">${item.cat} · ${item.price}</div>
+      </div>
+      <button class="avail-toggle ${item.available ? 'on' : 'off'}" onclick="toggleMenuItem(${idx})">
+        ${item.available ? '✓ Available' : '✗ Hidden'}
+      </button>
+    </div>`;
+  });
+  html += `</div>`;
+  return html;
+}
+
+// ─── SETTINGS ───
+function renderSettings() {
+  let html = `<div class="section-title" style="margin-bottom:16px">Branch & Table Settings</div>`;
+
+  // Branch list
+  html += `<div class="settings-card">
+    <div class="settings-card-title">Branches</div>
+    <div class="branch-list">`;
+  branches.forEach((branch, idx) => {
+    html += `<div class="branch-item">
+      <div class="branch-item-name">${branch.name}</div>
+      <div class="branch-item-tables">${branch.tables} tables</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <label style="font-size:12px;color:var(--text-muted)">Tables:</label>
+        <input class="settings-input" type="number" min="1" max="50" value="${branch.tables}" onchange="updateBranchTables(${idx}, this.value)">
+        <label class="toggle-switch"><input type="checkbox" ${branch.active ? 'checked' : ''} onchange="toggleBranch(${idx}, this.checked)"><span class="toggle-slider"></span></label>
+      </div>
+    </div>`;
+  });
+  html += `</div>
+  <div class="add-branch-form" style="margin-top:14px">
+    <input type="text" id="new-branch-name" placeholder="New branch name..." style="flex:1;min-width:120px;padding:9px 12px;border-radius:8px;border:1.5px solid var(--border);font-size:14px;font-family:'DM Sans',sans-serif;outline:none">
+    <input type="number" id="new-branch-tables" placeholder="Tables" min="1" max="50" value="6" style="width:80px;padding:9px 12px;border-radius:8px;border:1.5px solid var(--border);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;text-align:center">
+    <button class="action-btn" onclick="addBranch()">+ Add Branch</button>
+  </div>
+  </div>`;
+
+  // General settings
+  html += `<div class="settings-card">
+    <div class="settings-card-title">General</div>
+    <div class="settings-row">
+      <div><div class="settings-label">Auto-refresh interval</div><div class="settings-sub">How often to poll for new orders</div></div>
+      <span style="font-size:13px;color:var(--brick);font-weight:600">Every 3 seconds</span>
+    </div>
+    <div class="settings-row">
+      <div><div class="settings-label">QR Menu base URL</div><div class="settings-sub">Link used in QR codes</div></div>
+      <span style="font-size:11px;color:var(--text-muted);font-family:monospace;word-break:break-all">tpn-table-menu.html</span>
+    </div>
+    <div class="settings-row">
+      <div><div class="settings-label">Bill request alerts</div><div class="settings-sub">Show popup when customer requests bill</div></div>
+      <label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+    </div>
+    <div class="settings-row">
+      <div><div class="settings-label">New order sound</div><div class="settings-sub">Play audio on new order arrival</div></div>
+      <label class="toggle-switch"><input type="checkbox"><span class="toggle-slider"></span></label>
+    </div>
+  </div>`;
+
+  return html;
+}
+
+// ─── EVENT FUNCTIONS ───
+function attachEvents() {}
+
+function switchBranch(name) {
+  currentBranch = name;
+  document.getElementById('current-branch-label').textContent = name;
+  updateBadges();
+  renderTab();
+}
+
+function setOrderFilter(f) {
+  orderFilter = f;
+  renderTab();
+}
+
+function advanceOrder(ref) {
+  const order = dineInOrders.find(o => o.ref === ref);
+  if (!order) return;
+  const pipeline = ['received', 'preparing', 'ready', 'done'];
+  const idx = pipeline.indexOf(order.status);
+  if (idx < pipeline.length - 1) order.status = pipeline[idx + 1];
+  // Update table state
+  const branch = branches.find(b => b.name === order.branch);
+  if (branch) {
+    const key = branch.id + '_' + order.table;
+    const tbl = tableStates[key];
+    if (tbl) {
+      const allOrders = tbl.orders;
+      const allReady = allOrders.every(o => o.status === 'ready' || o.status === 'done');
+      if (allReady && tbl.status !== 'bill-requested') tbl.status = 'ready';
+    }
+  }
+  showToast(`✅ Order ${ref} advanced to ${order.status}.`);
+  updateBadges();
+  renderTab();
+}
+
+function markBillReady(tableNum, branchId) {
+  const key = branchId + '_' + tableNum;
+  const tbl = tableStates[key];
+  if (!tbl) return;
+  tbl.billRequested = true;
+  tbl.status = 'bill-requested';
+  tbl.orders.forEach(o => { o.billRequested = true; });
+  showToast(`💳 Table ${tableNum} marked for billing.`);
+  renderTab();
+}
+
+function clearTable(tableNum, branchId) {
+  const key = branchId + '_' + tableNum;
+  tableStates[key] = { status: 'empty', guest: null, pax: 0, orders: [], sessionTotal: 0, billRequested: false, openedAt: null };
+  // Remove done orders from list
+  dineInOrders = dineInOrders.filter(o => {
+    const b = branches.find(br => br.id === branchId);
+    return !(b && o.branch === b.name && o.table === tableNum);
+  });
+  showToast(`🪑 Table ${tableNum} cleared.`);
+  updateBadges();
+  renderTab();
+}
+
+function closeTable(tableNum, branchId) {
+  const key = branchId + '_' + tableNum;
+  const tbl = tableStates[key];
+  if (!tbl) return;
+  const total = tbl.sessionTotal;
+  openModal('Close Table ' + tableNum, `
+    <p style="margin-bottom:14px;color:var(--text-muted)">Confirm payment received and close this table session.</p>
+    <div style="background:var(--cream);border-radius:12px;padding:16px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:14px"><span>Guest</span><strong>${tbl.guest}</strong></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:14px"><span>Pax</span><strong>${tbl.pax}</strong></div>
+      <div style="display:flex;justify-content:space-between;font-size:16px"><span>Total Paid</span><strong style="color:var(--brick)">₱${total.toFixed(2)}</strong></div>
+    </div>
+  `, [
+    { label: 'Cancel', cls: 'secondary', fn: 'closeModal()' },
+    { label: '✓ Confirm & Close Table', cls: 'primary', fn: `clearTable(${tableNum}, '${branchId}'); closeModal();` }
+  ]);
+}
+
+function toggleMenuItem(idx) {
+  menuAvailability[idx].available = !menuAvailability[idx].available;
+  showToast(`${menuAvailability[idx].name} marked as ${menuAvailability[idx].available ? 'available' : 'unavailable'}.`);
+  renderTab();
+}
+
+function updateBranchTables(idx, val) {
+  const n = parseInt(val);
+  if (isNaN(n) || n < 1) return;
+  branches[idx].tables = n;
+  initTableStates();
+  showToast(`${branches[idx].name} updated to ${n} tables.`);
+  if (currentTab === 'floor') renderTab();
+}
+
+function toggleBranch(idx, active) {
+  branches[idx].active = active;
+  showToast(`${branches[idx].name} ${active ? 'enabled' : 'disabled'}.`);
+}
+
+function addBranch() {
+  const name = document.getElementById('new-branch-name')?.value.trim();
+  const tables = parseInt(document.getElementById('new-branch-tables')?.value) || 6;
+  if (!name) { showToast('⚠️ Please enter a branch name.'); return; }
+  const id = name.toLowerCase().replace(/\s+/g, '') + Date.now();
+  branches.push({ id, name, tables, active: true });
+  initTableStates();
+  showToast(`✅ ${name} branch added with ${tables} tables.`);
+  renderTab();
+}
+
+function openAddTableModal() {
+  const branch = branches.find(b => b.name === currentBranch);
+  if (!branch) return;
+  openModal(`Add Tables — ${branch.name}`, `
+    <p style="margin-bottom:14px;color:var(--text-muted)">Current tables: <strong>${branch.tables}</strong></p>
+    <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px">Total number of tables</label>
+    <input id="add-table-input" class="settings-input" type="number" min="1" max="50" value="${branch.tables}" style="width:100%;text-align:left">
+  `, [
+    { label: 'Cancel', cls: 'secondary', fn: 'closeModal()' },
+    { label: 'Update Tables', cls: 'primary', fn: `updateBranchTables(${branches.indexOf(branch)}, document.getElementById('add-table-input').value); closeModal();` }
+  ]);
+}
+
+// ─── TABLE MODAL ───
+function openTableModal(tableNum, branchId) {
+  const key = branchId + '_' + tableNum;
+  const tbl = tableStates[key];
+  if (!tbl || tbl.status === 'empty') return;
+  const activeOrders = tbl.orders.filter(o => o.status !== 'done');
+
+  let content = `
+  <div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap">
+    <div style="flex:1;min-width:120px;background:var(--cream);border-radius:10px;padding:12px">
+      <div style="font-size:11px;color:var(--text-muted);font-weight:700;margin-bottom:4px">GUEST</div>
+      <div style="font-size:15px;font-weight:700">${tbl.guest}</div>
+    </div>
+    <div style="flex:1;min-width:120px;background:var(--cream);border-radius:10px;padding:12px">
+      <div style="font-size:11px;color:var(--text-muted);font-weight:700;margin-bottom:4px">PAX</div>
+      <div style="font-size:15px;font-weight:700">${tbl.pax} person(s)</div>
+    </div>
+    <div style="flex:1;min-width:120px;background:var(--cream);border-radius:10px;padding:12px">
+      <div style="font-size:11px;color:var(--text-muted);font-weight:700;margin-bottom:4px">SESSION TOTAL</div>
+      <div style="font-size:15px;font-weight:700;color:var(--brick)">₱${tbl.sessionTotal.toFixed(2)}</div>
+    </div>
+  </div>
+  <div style="font-size:13px;font-weight:700;color:var(--text-muted);letter-spacing:0.07em;text-transform:uppercase;margin-bottom:10px">Orders (${activeOrders.length} active)</div>
+  <div class="order-detail-items">`;
+
+  tbl.orders.forEach(order => {
+    const pillClass = { received: 'pill-received', preparing: 'pill-preparing', ready: 'pill-ready', done: 'pill-done' }[order.status];
+    const pillLabel = { received: 'Received', preparing: 'Preparing', ready: 'Ready', done: 'Done' }[order.status];
+    content += `<div style="background:var(--cream);border-radius:10px;padding:12px;margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:12px;font-weight:600;color:var(--text-muted)">${order.ref}</span>
+        <span class="order-status-pill ${pillClass}">${pillLabel}</span>
+      </div>`;
+    order.items.forEach(item => {
+      content += `<div class="order-item-row" style="font-size:13px;padding:3px 0">
+        <span>${item.emoji} ${item.qty}× ${item.name}</span>
+        <span style="font-weight:600;color:var(--text-muted)">₱${(item.price * item.qty).toFixed(2)}</span>
+      </div>`;
+    });
+    if (order.allergies?.length) {
+      order.allergies.forEach(a => { content += `<span class="order-flag flag-allergy" style="margin-top:6px;display:inline-block">⚠️ ${a}</span>`; });
+    }
+    if (order.specialReq) content += `<div style="margin-top:6px;font-size:12px;color:var(--amber)">📝 ${order.specialReq}</div>`;
+    content += `</div>`;
+  });
+  content += `</div>`;
+
+  const branchIdx = branches.findIndex(b => b.id === branchId);
+  openModal(`Table ${tableNum} Details`, content, [
+    { label: 'Close', cls: 'secondary', fn: 'closeModal()' },
+    { label: tbl.billRequested ? '✓ Close Table' : '💳 Request Bill', cls: 'primary', fn: tbl.billRequested ? `clearTable(${tableNum}, '${branchId}'); closeModal();` : `markBillReady(${tableNum}, '${branchId}'); closeModal();` }
+  ]);
+}
+
+// ─── ORDER MODAL ───
+function openOrderModal(ref) {
+  const order = dineInOrders.find(o => o.ref === ref);
+  if (!order) return;
+  const pipeline = ['received', 'preparing', 'ready', 'done'];
+  const nextStatus = pipeline[pipeline.indexOf(order.status) + 1];
+
+  let content = `
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+    <div style="background:var(--cream);border-radius:10px;padding:10px"><div style="font-size:10px;color:var(--text-muted);font-weight:700">TABLE</div><div style="font-size:16px;font-weight:700">Table ${order.table}</div></div>
+    <div style="background:var(--cream);border-radius:10px;padding:10px"><div style="font-size:10px;color:var(--text-muted);font-weight:700">GUEST</div><div style="font-size:16px;font-weight:700">${order.name}</div></div>
+    <div style="background:var(--cream);border-radius:10px;padding:10px"><div style="font-size:10px;color:var(--text-muted);font-weight:700">PAX</div><div style="font-size:16px;font-weight:700">${order.pax}</div></div>
+    <div style="background:var(--cream);border-radius:10px;padding:10px"><div style="font-size:10px;color:var(--text-muted);font-weight:700">TOTAL</div><div style="font-size:16px;font-weight:700;color:var(--brick)">₱${order.total.toFixed(2)}</div></div>
+  </div>
+  <div style="font-size:13px;font-weight:700;color:var(--text-muted);letter-spacing:0.07em;text-transform:uppercase;margin-bottom:10px">Items</div>
+  <div class="order-detail-items">`;
+  order.items.forEach(item => {
+    content += `<div class="detail-item">
+      <div class="detail-item-emoji">${item.emoji}</div>
+      <div class="detail-item-info">
+        <div class="detail-item-name">${item.name}${item.variant ? ' — ' + item.variant : ''}</div>
+        <div class="detail-item-meta">Qty: ${item.qty} × ₱${item.price}</div>
+      </div>
+      <div class="detail-item-price">₱${(item.price * item.qty).toFixed(2)}</div>
+    </div>`;
+  });
+  content += `</div>`;
+  if (order.allergies?.length) {
+    content += `<div style="margin-top:12px"><div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">ALLERGIES / DIETARY</div>`;
+    order.allergies.forEach(a => { content += `<span class="order-flag flag-allergy" style="display:inline-block;margin:2px">⚠️ ${a}</span>`; });
+    content += `</div>`;
+  }
+  if (order.specialReq) content += `<div style="margin-top:10px;background:var(--amber-light);border-radius:8px;padding:10px;font-size:13px;color:var(--amber)">📝 <strong>Special request:</strong> ${order.specialReq}</div>`;
+
+  openModal(`Order ${order.ref}`, content, [
+    { label: 'Close', cls: 'secondary', fn: 'closeModal()' },
+    ...(nextStatus ? [{ label: `→ Mark as ${nextStatus.charAt(0).toUpperCase() + nextStatus.slice(1)}`, cls: 'primary', fn: `advanceOrder('${ref}'); closeModal();` }] : [])
+  ]);
+}
+
+// ─── QR MODAL ───
+function openQRModal(tableNum, branchName, url) {
+  const fullUrl = window.location.origin + '/' + url;
+  openModal(`Table ${tableNum} QR Code`, `
+  <div class="qr-display">
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Customers scan this to view the menu and order.</div>
+    <div class="qr-placeholder">📱</div>
+    <div style="margin-bottom:10px;font-size:13px;font-weight:600">Table ${tableNum} — ${branchName}</div>
+    <div class="qr-url">${url}?table=${tableNum}&branch=${encodeURIComponent(branchName)}</div>
+    <div style="margin-top:12px;font-size:12px;color:var(--text-muted)">(QR code would be generated from this URL in production)</div>
+  </div>
+  <div style="display:flex;gap:10px;margin-top:10px">
+    <a href="${url}?table=${tableNum}&branch=${encodeURIComponent(branchName)}" target="_blank" style="flex:1;text-align:center;padding:12px;background:var(--brick);color:#fff;border-radius:10px;font-weight:700;font-size:13px;text-decoration:none">Open Customer Menu</a>
+  </div>
+  `, [{ label: 'Close', cls: 'secondary', fn: 'closeModal()' }]);
+}
+
+// ─── STAT TILE DRILLDOWNS ───
+function showRevenueModal(totalRev) {
+  const branch = branches.find(b => b.name === currentBranch);
+  if (!branch) return;
+  // Build per-table breakdown
+  let rows = '';
+  let byType = { dinein: 0, takeout: 0 };
+  for (let i = 1; i <= branch.tables; i++) {
+    const key = branch.id + '_' + i;
+    const tbl = tableStates[key];
+    if (!tbl || tbl.status === 'empty' || tbl.sessionTotal === 0) continue;
+    const orderCount = tbl.orders?.filter(o => o.status !== 'done').length || 0;
+    byType.dinein += tbl.sessionTotal;
+    rows += `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f0e6d3;font-size:14px;">
+      <div><span style="font-weight:700;color:#2d1a0a;">Table ${i}</span> <span style="color:#7a5c3a;font-size:12px;">· ${tbl.guest || '—'} · ${tbl.pax || 0} pax</span></div>
+      <div style="text-align:right;"><div style="font-weight:700;color:#8B1A0E;">₱${(tbl.sessionTotal||0).toLocaleString('en',{minimumFractionDigits:2})}</div><div style="font-size:11px;color:#7a5c3a;">${orderCount} active order(s)</div></div>
+    </div>`;
+  }
+  if (!rows) rows = `<div style="text-align:center;padding:30px;color:#7a5c3a;font-style:italic;">No occupied tables at this time.</div>`;
+
+  const pct = (v) => totalRev ? ((v / totalRev) * 100).toFixed(0) + '%' : '0%';
+  openModal('💰 Session Revenue', `
+    <div style="background:#f5ead8;border-radius:10px;padding:16px;margin-bottom:16px;text-align:center;">
+      <div style="font-size:11px;color:#7a5c3a;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">Total Session Revenue</div>
+      <div style="font-family:'Playfair Display',serif;font-size:36px;font-weight:900;color:#8B1A0E;">₱${totalRev.toLocaleString('en',{minimumFractionDigits:2})}</div>
+      <div style="font-size:12px;color:#7a5c3a;margin-top:4px;">${currentBranch} · current shift</div>
+    </div>
+    <div style="font-size:11px;font-weight:700;color:#7a5c3a;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;">Per Table</div>
+    ${rows}
+  `, [{ label: 'Close', cls: 'secondary', fn: 'document.getElementById("modal").classList.remove("open");document.body.style.overflow=""' }]);
+}
+
+function showOccupiedTablesList(branchId) {
+  const branch = branches.find(b => b.id === branchId);
+  if (!branch) return;
+  let rows = '';
+  for (let i = 1; i <= branch.tables; i++) {
+    const key = branch.id + '_' + i;
+    const tbl = tableStates[key];
+    if (!tbl || tbl.status === 'empty') continue;
+    const statusColors = { occupied: '#c8922a', 'active-orders': '#8B1A0E', ready: '#2d7a4f', 'bill-requested': '#1a4a7a' };
+    const statusLabels = { occupied: 'Occupied', 'active-orders': 'Active Orders', ready: 'Food Ready', 'bill-requested': 'Bill Requested' };
+    const elapsed = tbl.openedAt ? Math.floor((Date.now() - new Date(tbl.openedAt)) / 60000) + ' min' : '—';
+    rows += `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #f0e6d3;cursor:pointer;" onclick="document.getElementById('modal').classList.remove('open');document.body.style.overflow='';openTableModal(${i},'${branchId}')">
+      <div>
+        <div style="font-weight:700;font-size:15px;color:#2d1a0a;">Table ${i}</div>
+        <div style="font-size:12px;color:#7a5c3a;">${tbl.guest || '—'} · ${tbl.pax || 0} pax · ${elapsed}</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:11px;font-weight:700;color:${statusColors[tbl.status] || '#9e9e9e'};margin-bottom:3px;">${statusLabels[tbl.status] || tbl.status}</div>
+        <div style="font-weight:700;color:#8B1A0E;">₱${(tbl.sessionTotal||0).toLocaleString('en',{minimumFractionDigits:2})}</div>
+      </div>
+    </div>`;
+  }
+  if (!rows) rows = `<div style="text-align:center;padding:30px;color:#7a5c3a;font-style:italic;">No occupied tables right now.</div>`;
+  openModal('🪑 Occupied Tables', rows,
+    [{ label: 'Close', cls: 'secondary', fn: 'document.getElementById("modal").classList.remove("open");document.body.style.overflow=""' }]);
+}
+
+function showBillRequestedList(branchId) {
+  const branch = branches.find(b => b.id === branchId);
+  if (!branch) return;
+  let rows = '';
+  for (let i = 1; i <= branch.tables; i++) {
+    const key = branch.id + '_' + i;
+    const tbl = tableStates[key];
+    if (!tbl || !tbl.billRequested) continue;
+    rows += `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #f0e6d3;">
+      <div>
+        <div style="font-weight:700;font-size:15px;color:#2d1a0a;">Table ${i} <span style="font-size:12px;color:#1a4a7a;">💳 Bill Requested</span></div>
+        <div style="font-size:12px;color:#7a5c3a;">${tbl.guest || '—'} · ${tbl.pax || 0} pax</div>
+      </div>
+      <div style="text-align:right;display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+        <div style="font-weight:700;color:#8B1A0E;font-size:16px;">₱${(tbl.sessionTotal||0).toLocaleString('en',{minimumFractionDigits:2})}</div>
+        <button style="background:#8B1A0E;color:#fff;border:none;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;" onclick="document.getElementById('modal').classList.remove('open');document.body.style.overflow='';closeTable(${i},'${branchId}')">Close Table</button>
+      </div>
+    </div>`;
+  }
+  if (!rows) rows = `<div style="text-align:center;padding:30px;color:#7a5c3a;font-style:italic;">No tables with pending bills.</div>`;
+  openModal('💳 Bill Requested', rows,
+    [{ label: 'Close', cls: 'secondary', fn: 'document.getElementById("modal").classList.remove("open");document.body.style.overflow=""' }]);
+}
+
+
+function openModal(title, content, buttons = []) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-content').innerHTML = content;
+  document.getElementById('modal-footer').innerHTML = buttons.map(b =>
+    `<button class="modal-btn ${b.cls}" onclick="${b.fn}">${b.label}</button>`
+  ).join('');
+  document.getElementById('modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal(e) {
+  if (e && e.target !== document.getElementById('modal')) return;
+  document.getElementById('modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// ─── TOAST ───
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2400);
+}
+</script>
+</body>
+</html>

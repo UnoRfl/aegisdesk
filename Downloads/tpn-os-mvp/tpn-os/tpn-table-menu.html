@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="tpn-supabase.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+<meta name="theme-color" content="#1a0a00">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Tyo Paeng Nyo · Table Menu</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=DM+Sans:wght@300;400;500;600&family=Lora:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --brick:#8B1A0E; --brick-dark:#6a1208; --brick-light:#c4392a;
+    --gold:#c8922a; --gold-light:#e8b84b;
+    --cream:#fdf6ec; --cream-dark:#f5ead8;
+    --charcoal:#1a0a00; --text:#2d1a0a; --text-muted:#7a5c3a;
+    --surface:#fff8f0; --border:#e8d5b8;
+    --success:#2d7a4f; --warning:#c8922a;
+    --shadow:0 2px 16px rgba(139,26,14,0.10); --radius:16px;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html{font-size:16px;-webkit-tap-highlight-color:rgba(139,26,14,0.08)}
+  body{font-family:"DM Sans",sans-serif;background:var(--cream);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+  .header{position:sticky;top:0;z-index:100;background:var(--charcoal);padding:0 20px;height:64px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 20px rgba(0,0,0,0.3);padding-top:env(safe-area-inset-top)}
+  .header-brand{display:flex;align-items:center;gap:10px}
+  .header-logo{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--brick),var(--gold));display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;font-family:"Playfair Display",serif;font-weight:700;flex-shrink:0}
+  .header-name{font-family:"Playfair Display",serif;font-size:15px;color:#fff;font-weight:700}
+  .header-table{font-size:11px;color:var(--gold-light);font-weight:500;letter-spacing:0.05em}
+  .header-actions{display:flex;align-items:center;gap:8px}
+  .lang-btn{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;font-size:11px;font-weight:600;letter-spacing:0.06em;padding:5px 10px;border-radius:20px;cursor:pointer;font-family:"DM Sans",sans-serif}
+
+  /* RUNNING TOTAL BAR */
+  .running-bar{display:none;background:var(--brick);padding:10px 20px;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:64px;z-index:95}
+  .running-bar.visible{display:flex}
+  .running-bar-left{display:flex;flex-direction:column}
+  .running-bar-label{font-size:10px;color:rgba(255,255,255,0.65);letter-spacing:0.1em;text-transform:uppercase;font-weight:600}
+  .running-bar-amount{font-family:"Playfair Display",serif;font-size:22px;font-weight:700;color:#fff;line-height:1}
+  .running-bar-sub{font-size:11px;color:rgba(255,255,255,0.65);margin-top:2px}
+  .running-bar-btn{background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.3);color:#fff;padding:9px 16px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:"DM Sans",sans-serif;white-space:nowrap;flex-shrink:0}
+
+  /* FAB */
+  .cart-fab{position:fixed;bottom:calc(28px + env(safe-area-inset-bottom));right:20px;z-index:150;display:none;background:var(--brick);width:60px;height:60px;border-radius:50%;box-shadow:0 4px 20px rgba(139,26,14,0.4);border:none;cursor:pointer;font-size:26px;align-items:center;justify-content:center;transition:transform 0.2s;animation:fab-pop 0.35s cubic-bezier(0.34,1.56,0.64,1)}
+  .cart-fab.visible{display:flex}
+  @keyframes fab-pop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+  @keyframes fab-shake{0%,100%{transform:rotate(0)}20%{transform:rotate(-12deg) scale(1.12)}40%{transform:rotate(12deg) scale(1.12)}60%{transform:rotate(-7deg)}80%{transform:rotate(7deg)}}
+  .cart-fab.shake{animation:fab-shake 0.45s ease}
+  .cart-fab-count{position:absolute;top:-2px;right:-2px;background:var(--gold-light);color:var(--charcoal);font-size:11px;font-weight:700;min-width:22px;height:22px;border-radius:11px;display:flex;align-items:center;justify-content:center;padding:0 5px;border:2px solid var(--cream)}
+
+  .hero-band{background:linear-gradient(135deg,var(--brick-dark) 0%,var(--brick) 50%,var(--charcoal) 100%);padding:28px 20px 24px;text-align:center;position:relative;overflow:hidden}
+  .hero-band::before{content:"";position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")}
+  .hero-tagline{font-size:11px;color:var(--gold-light);letter-spacing:0.15em;text-transform:uppercase;font-weight:600;margin-bottom:6px}
+  .hero-title{font-family:"Playfair Display",serif;font-size:26px;color:#fff;font-weight:700;line-height:1.2}
+  .hero-sub{font-size:13px;color:rgba(255,255,255,0.65);margin-top:6px;font-style:italic;font-family:"Lora",serif}
+
+  .sticky-cats{position:sticky;top:64px;z-index:90;background:var(--surface);border-bottom:1px solid var(--border);padding:12px 0;transition:top 0.2s}
+  .sticky-cats.with-bar{top:104px}
+  .cats-scroll{display:flex;gap:8px;overflow-x:auto;padding:0 16px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .cats-scroll::-webkit-scrollbar{display:none}
+  .cat-chip{flex-shrink:0;padding:8px 16px;border-radius:24px;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:#fff;color:var(--text-muted);transition:all 0.18s;white-space:nowrap;font-family:"DM Sans",sans-serif;min-height:44px;display:inline-flex;align-items:center}
+  .cat-chip.active{background:var(--brick);color:#fff;border-color:var(--brick)}
+
+  .search-wrap{padding:14px 16px 0;position:relative}
+  .search-icon{position:absolute;left:28px;top:50%;transform:translateY(-50%);font-size:16px;pointer-events:none;padding-top:14px}
+  .search-input{width:100%;padding:12px 16px 12px 44px;border-radius:12px;border:1.5px solid var(--border);background:#fff;font-size:15px;color:var(--text);font-family:"DM Sans",sans-serif;outline:none;transition:border-color 0.2s}
+  .search-input:focus{border-color:var(--brick)}
+
+  .featured-section{padding:20px 16px 0}
+  .section-header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .section-title{font-family:"Playfair Display",serif;font-size:20px;font-weight:700;color:var(--text)}
+  .section-badge{background:var(--brick);color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;letter-spacing:0.05em}
+  .featured-scroll{display:flex;gap:12px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .featured-scroll::-webkit-scrollbar{display:none}
+  .featured-card{flex-shrink:0;width:160px;background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;cursor:pointer;border:1.5px solid var(--border);transition:transform 0.18s}
+  .featured-card:hover{transform:translateY(-2px)}
+  .featured-emoji{height:80px;display:flex;align-items:center;justify-content:center;font-size:44px;background:var(--cream-dark)}
+  .featured-body{padding:10px 10px 12px}
+  .featured-name{font-size:13px;font-weight:700;color:var(--text);line-height:1.3;margin-bottom:4px}
+  .featured-price{font-size:14px;font-weight:700;color:var(--brick)}
+  .featured-tag{display:inline-block;font-size:9px;font-weight:700;padding:2px 6px;border-radius:10px;background:#fff3e0;color:var(--gold);letter-spacing:0.05em;margin-bottom:4px}
+  .add-mini-btn{width:100%;margin-top:6px;padding:7px;border-radius:8px;background:var(--brick);color:#fff;font-size:12px;font-weight:700;border:none;cursor:pointer;font-family:"DM Sans",sans-serif}
+
+  .menu-body{padding:20px 16px 200px}
+  .cat-section{margin-bottom:32px}
+  .cat-section-title{font-family:"Playfair Display",serif;font-size:18px;font-weight:700;color:var(--text);padding-bottom:8px;border-bottom:2px solid var(--brick);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+  .cat-count{font-size:12px;font-family:"DM Sans",sans-serif;font-weight:500;color:var(--text-muted)}
+  .dish-list{display:flex;flex-direction:column;gap:10px}
+  .dish-card{background:#fff;border-radius:var(--radius);border:1.5px solid var(--border);padding:14px;display:flex;align-items:flex-start;gap:14px;box-shadow:0 1px 6px rgba(0,0,0,0.04);cursor:pointer;transition:box-shadow 0.18s,border-color 0.18s}
+  .dish-card:hover{box-shadow:var(--shadow);border-color:var(--brick)}
+  .dish-card.unavailable{opacity:0.45;cursor:not-allowed}
+  .dish-emoji{font-size:38px;flex-shrink:0;width:52px;text-align:center;padding-top:2px}
+  .dish-info{flex:1;min-width:0}
+  .dish-name{font-size:15px;font-weight:700;color:var(--text);margin-bottom:3px}
+  .dish-desc{font-size:12px;color:var(--text-muted);line-height:1.4;margin-bottom:6px;font-family:"Lora",serif;font-style:italic}
+  .dish-pax-chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}
+  .dish-pax-chip{font-size:10px;font-weight:700;padding:3px 8px;border-radius:8px;background:var(--cream-dark);color:var(--brick);border:1px solid var(--border)}
+  .dish-tags{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px}
+  .dish-tag{font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px}
+  .tag-best{background:#fff3e0;color:#c8922a}
+  .dish-right{flex-shrink:0;text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+  .dish-price{font-size:15px;font-weight:700;color:var(--brick)}
+  .dish-price-sub{font-size:10px;color:var(--text-muted);font-weight:400}
+  .add-dish-btn{background:var(--brick);color:#fff;border:none;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:"DM Sans",sans-serif;white-space:nowrap}
+  .no-results{text-align:center;padding:60px 20px;color:var(--text-muted);font-family:"Lora",serif;font-style:italic;font-size:16px}
+
+  /* CART */
+  .cart-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;opacity:0;pointer-events:none;transition:opacity 0.25s;backdrop-filter:blur(2px)}
+  .cart-overlay.open{opacity:1;pointer-events:all}
+  .cart-drawer{position:fixed;bottom:0;left:0;right:0;z-index:201;background:#fff;border-radius:20px 20px 0 0;max-height:88vh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform 0.3s cubic-bezier(0.32,0.72,0,1);box-shadow:0 -8px 40px rgba(0,0,0,0.2);padding-bottom:env(safe-area-inset-bottom)}
+  .cart-drawer.open{transform:translateY(0)}
+  .cart-handle{width:36px;height:4px;background:#ddd;border-radius:2px;margin:12px auto 0;flex-shrink:0}
+  .cart-header{padding:14px 20px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+  .cart-title{font-family:"Playfair Display",serif;font-size:18px;font-weight:700}
+  .cart-close{background:none;border:none;font-size:22px;cursor:pointer;color:var(--text-muted);padding:4px}
+  .cart-items{overflow-y:auto;flex:1;padding:14px 20px}
+  .cart-empty{text-align:center;padding:40px 0;color:var(--text-muted);font-family:"Lora",serif;font-style:italic}
+  .cart-item{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+  .cart-item-emoji{font-size:28px;flex-shrink:0}
+  .cart-item-info{flex:1;min-width:0}
+  .cart-item-name{font-size:14px;font-weight:700;margin-bottom:2px}
+  .cart-item-variant{font-size:11px;color:var(--text-muted)}
+  .cart-item-qty{display:flex;align-items:center;gap:10px;margin-top:8px}
+  .qty-btn{width:32px;height:32px;border-radius:50%;border:1.5px solid var(--border);background:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--brick);transition:all 0.15s;touch-action:manipulation}
+  .qty-btn:hover{border-color:var(--brick);background:var(--cream)}
+  .qty-num{font-size:15px;font-weight:700;min-width:20px;text-align:center}
+  .cart-item-price{font-size:14px;font-weight:700;color:var(--brick);flex-shrink:0}
+  .cart-footer{padding:14px 20px 16px;border-top:1px solid var(--border);background:#fff;flex-shrink:0}
+  .cart-totals{display:flex;justify-content:space-between;margin-bottom:12px}
+  .cart-total-label{font-size:16px;font-weight:700}
+  .cart-total-amt{font-size:20px;font-weight:700;color:var(--brick)}
+  .checkout-btn{width:100%;padding:16px;border-radius:14px;border:none;background:linear-gradient(135deg,var(--brick),var(--brick-dark));color:#fff;font-size:16px;font-weight:700;cursor:pointer;font-family:"DM Sans",sans-serif}
+  .checkout-btn:disabled{background:#ccc;cursor:not-allowed}
+
+  /* DISH MODAL */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:300;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.22s;backdrop-filter:blur(2px)}
+  .modal-overlay.open{opacity:1;pointer-events:all}
+  .modal-sheet{background:#fff;border-radius:20px 20px 0 0;width:100%;max-height:92vh;overflow-y:auto;padding-bottom:env(safe-area-inset-bottom,20px);transform:translateY(20px);transition:transform 0.28s}
+  .modal-overlay.open .modal-sheet{transform:translateY(0)}
+  .modal-handle{width:36px;height:4px;background:#ddd;border-radius:2px;margin:12px auto 0}
+  .modal-header{padding:16px 20px 14px;border-bottom:1px solid var(--border)}
+  .modal-title{font-family:"Playfair Display",serif;font-size:20px;font-weight:700}
+  .modal-body{padding:20px}
+  .modal-emoji{font-size:64px;text-align:center;margin-bottom:12px}
+  .modal-dish-name{font-family:"Playfair Display",serif;font-size:22px;font-weight:700;text-align:center;margin-bottom:6px}
+  .modal-dish-desc{font-size:13px;color:var(--text-muted);text-align:center;font-family:"Lora",serif;font-style:italic;line-height:1.5;margin-bottom:20px}
+  .modal-label{font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:0.07em;text-transform:uppercase;margin-bottom:8px;margin-top:16px}
+  .pax-options{display:flex;gap:10px}
+  .pax-opt{flex:1;padding:14px 10px;border-radius:12px;border:2px solid var(--border);text-align:center;cursor:pointer;transition:all 0.18s;background:#fff}
+  .pax-opt.selected{border-color:var(--brick);background:var(--cream)}
+  .pax-opt-size{font-size:15px;font-weight:700;color:var(--text);display:block}
+  .pax-opt-price{font-size:13px;color:var(--brick);font-weight:700;display:block;margin-top:3px}
+  .qty-row{display:flex;align-items:center;justify-content:space-between;padding:16px 0}
+  .qty-row-label{font-size:15px;font-weight:600}
+  .qty-control{display:flex;align-items:center;gap:16px}
+  .qty-control .qty-btn{width:40px;height:40px;font-size:20px}
+  .qty-control .qty-num{font-size:20px;min-width:30px}
+  .special-req-input{width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid var(--border);font-size:14px;font-family:"DM Sans",sans-serif;resize:none;outline:none;color:var(--text);min-height:70px}
+  .special-req-input:focus{border-color:var(--brick)}
+  .modal-add-btn{width:100%;padding:16px;border-radius:14px;border:none;background:linear-gradient(135deg,var(--brick),var(--brick-dark));color:#fff;font-size:16px;font-weight:700;cursor:pointer;font-family:"DM Sans",sans-serif;margin-top:20px;letter-spacing:0.02em}
+
+  /* FULLSCREEN SCREENS */
+  .fullscreen{position:fixed;inset:0;background:var(--cream);z-index:400;overflow-y:auto;display:none;padding-bottom:calc(40px + env(safe-area-inset-bottom))}
+  .fullscreen.show{display:block}
+  .fs-header{background:var(--charcoal);padding:0 20px;height:60px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:10;padding-top:env(safe-area-inset-top)}
+  .back-btn{background:rgba(255,255,255,0.1);border:none;color:#fff;width:38px;height:38px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .fs-title{font-family:"Playfair Display",serif;font-size:18px;color:#fff;font-weight:700}
+  .fs-body{padding:24px 20px;max-width:480px;margin:0 auto}
+  .form-card{background:#fff;border-radius:var(--radius);padding:20px;margin-bottom:16px;border:1px solid var(--border)}
+  .form-card-title{font-size:13px;font-weight:700;color:var(--text-muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+  .form-field{margin-bottom:14px}
+  .form-field:last-child{margin-bottom:0}
+  .form-field label{display:block;font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:5px}
+  .form-input{width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid var(--border);font-size:16px;font-family:"DM Sans",sans-serif;color:var(--text);outline:none;background:#fff;transition:border-color 0.2s}
+  .form-input:focus{border-color:var(--brick)}
+  .form-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%237a5c3a' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
+
+  .info-note{background:#fff8f0;border:1px solid var(--border);border-radius:10px;padding:14px 16px;font-size:13px;color:var(--text-muted);line-height:1.55;display:flex;gap:10px;align-items:flex-start;margin-bottom:16px}
+  .info-note-icon{font-size:20px;flex-shrink:0}
+  .summary-item{display:flex;justify-content:space-between;align-items:flex-start;font-size:14px;padding:6px 0}
+  .summary-item-qty{font-weight:700;color:var(--brick);margin-right:6px}
+  .summary-item-price{font-weight:700;color:var(--text);flex-shrink:0}
+  .summary-divider{border:none;border-top:1px dashed var(--border);margin:10px 0}
+  .summary-total{display:flex;justify-content:space-between;font-size:17px;font-weight:700}
+  .summary-total-price{color:var(--brick)}
+  .submit-order-btn{width:100%;padding:18px;border-radius:14px;border:none;background:linear-gradient(135deg,var(--brick),var(--brick-dark));color:#fff;font-size:17px;font-weight:700;cursor:pointer;font-family:"DM Sans",sans-serif;box-shadow:0 4px 20px rgba(139,26,14,0.3);margin-top:8px}
+
+  /* CONFIRMATION */
+  #confirm-screen .fs-body{display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:40px}
+  .confirm-icon{font-size:72px;margin-bottom:20px;animation:bounceIn 0.5s}
+  @keyframes bounceIn{0%{transform:scale(0.5);opacity:0}70%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+  .confirm-title{font-family:"Playfair Display",serif;font-size:28px;font-weight:700;color:var(--brick);margin-bottom:8px}
+  .confirm-sub{font-size:15px;color:var(--text-muted);font-family:"Lora",serif;font-style:italic;margin-bottom:24px;line-height:1.5;max-width:320px}
+  .confirm-ref{background:var(--charcoal);color:#fff;padding:14px 28px;border-radius:12px;display:inline-block;margin-bottom:20px}
+  .confirm-ref-label{font-size:10px;color:rgba(255,255,255,0.5);letter-spacing:0.12em;text-transform:uppercase}
+  .confirm-ref-num{font-size:22px;font-weight:700;font-family:"Playfair Display",serif;color:var(--gold-light);letter-spacing:0.05em}
+
+  /* PROGRESS */
+  .progress-card{background:#fff;border-radius:var(--radius);padding:18px 20px;border:1px solid var(--border);width:100%;max-width:380px;text-align:left;margin-bottom:16px}
+  .progress-card-title{font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:14px}
+  .progress-steps{display:flex;align-items:flex-start;width:100%}
+  .progress-step{display:flex;flex-direction:column;align-items:center;flex:1}
+  .progress-dot{width:28px;height:28px;border-radius:50%;border:2px solid var(--border);background:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;z-index:1;transition:all 0.4s;flex-shrink:0}
+  .progress-dot.done{background:var(--success);border-color:var(--success);color:#fff}
+  .progress-dot.active{background:var(--brick);border-color:var(--brick);color:#fff;animation:pdot 1.5s infinite}
+  @keyframes pdot{0%,100%{box-shadow:0 0 0 0 rgba(139,26,14,0.4)}50%{box-shadow:0 0 0 6px rgba(139,26,14,0)}}
+  .progress-line-wrap{flex:1;padding-top:14px}
+  .progress-line{height:2px;background:var(--border);transition:background 0.4s}
+  .progress-line.done{background:var(--success)}
+  .progress-label{font-size:10px;color:var(--text-muted);margin-top:6px;font-weight:600;text-align:center}
+  .progress-label.active{color:var(--brick);font-weight:700}
+  .progress-label.done{color:var(--success)}
+
+  /* SESSION CARD */
+  .session-total-card{background:#fff;border-radius:var(--radius);border:1px solid var(--border);width:100%;max-width:380px;overflow:hidden;margin-bottom:16px}
+  .session-total-header{background:var(--cream-dark);padding:12px 20px;display:flex;justify-content:space-between;align-items:center}
+  .session-total-label{font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:0.08em;text-transform:uppercase}
+  .session-total-body{padding:14px 20px}
+  .session-order-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:7px 0;border-bottom:1px solid var(--border)}
+  .session-order-row:last-of-type{border-bottom:none}
+  .session-grand{display:flex;justify-content:space-between;font-size:18px;font-weight:700;padding-top:10px;border-top:2px solid var(--brick);margin-top:6px}
+  .session-grand-price{color:var(--brick)}
+
+  /* ACTION BUTTONS */
+  .confirm-action-row{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;max-width:380px;margin-top:4px}
+  .more-order-btn{width:100%;background:var(--brick);color:#fff;border:none;padding:15px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:"DM Sans",sans-serif}
+  .request-bill-btn{width:100%;background:var(--success);color:#fff;border:none;padding:15px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:"DM Sans",sans-serif}
+  .call-staff-btn{width:100%;background:transparent;color:var(--brick);border:2px solid var(--brick);padding:13px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:"DM Sans",sans-serif}
+
+  /* BILL SCREEN */
+  #bill-screen .fs-body{display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:32px}
+  .pay-methods-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:380px;margin-bottom:16px}
+  .pay-method-card{border:2px solid var(--border);border-radius:14px;padding:16px 12px;text-align:center;cursor:pointer;transition:all 0.18s;background:#fff;display:flex;flex-direction:column;align-items:center;gap:8px}
+  .pay-method-card.selected{border-color:var(--brick);background:#fff8f0}
+  .pay-method-icon{font-size:32px}
+  .pay-method-name{font-size:13px;font-weight:700;color:var(--text)}
+  .pay-method-sub{font-size:11px;color:var(--text-muted);line-height:1.3}
+  .bill-total-banner{background:linear-gradient(135deg,var(--brick),var(--brick-dark));color:#fff;padding:20px 24px;border-radius:16px;text-align:center;width:100%;max-width:380px;margin-bottom:20px}
+  .bill-total-label{font-size:11px;color:rgba(255,255,255,0.65);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px}
+  .bill-total-amount{font-family:"Playfair Display",serif;font-size:40px;font-weight:700;line-height:1}
+  .bill-total-sub{font-size:12px;color:rgba(255,255,255,0.65);margin-top:6px}
+  .bill-breakdown{background:#fff;border-radius:var(--radius);border:1px solid var(--border);padding:18px 20px;width:100%;max-width:380px;text-align:left;margin-bottom:20px}
+  .bill-submit-btn{width:100%;max-width:380px;padding:18px;border-radius:14px;border:none;background:var(--success);color:#fff;font-size:17px;font-weight:700;cursor:pointer;font-family:"DM Sans",sans-serif;box-shadow:0 4px 20px rgba(45,122,79,0.3)}
+  .bill-note{font-size:12px;color:var(--text-muted);max-width:340px;line-height:1.55;margin-top:12px;font-family:"Lora",serif;font-style:italic}
+
+  /* QR */
+  .qr-card{background:#fff;border-radius:20px;padding:28px 24px;text-align:center;border:1px solid var(--border);margin-bottom:16px}
+  .qr-provider-logo{font-size:48px;margin-bottom:12px}
+  .qr-provider-name{font-family:"Playfair Display",serif;font-size:24px;font-weight:700;color:var(--text);margin-bottom:4px}
+  .qr-amount-label{font-size:13px;color:var(--text-muted);margin-bottom:4px}
+  .qr-amount{font-family:"Playfair Display",serif;font-size:36px;font-weight:700;color:var(--brick);margin-bottom:20px}
+  .qr-image-wrap{background:#fff;border:3px solid var(--brick);border-radius:16px;padding:16px;display:inline-block;margin-bottom:16px}
+  .qr-image-wrap img{display:block;width:200px;height:200px}
+  .qr-instruction{font-size:13px;color:var(--text-muted);line-height:1.6;margin-bottom:20px}
+  .qr-instruction strong{color:var(--text)}
+  .qr-confirm-btn{width:100%;padding:16px;border-radius:14px;border:none;background:var(--success);color:#fff;font-size:16px;font-weight:700;cursor:pointer;font-family:"DM Sans",sans-serif}
+  .qr-back-btn{width:100%;padding:14px;border-radius:14px;border:2px solid var(--border);background:transparent;color:var(--text-muted);font-size:14px;font-weight:600;cursor:pointer;font-family:"DM Sans",sans-serif;margin-top:10px}
+
+  .toast{position:fixed;bottom:calc(90px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(20px);background:var(--charcoal);color:#fff;padding:12px 24px;border-radius:30px;font-size:14px;font-weight:600;z-index:999;opacity:0;transition:all 0.3s;pointer-events:none;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,0.3)}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  @media(max-width:380px){.featured-card{width:140px}.pay-methods-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-brand">
+    <div class="header-logo">T</div>
+    <div>
+      <div class="header-name">Tyo Paeng Nyo</div>
+      <div class="header-table" id="header-table-label">Loading...</div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button class="lang-btn" onclick="toggleLang()" id="lang-btn">TL</button>
+  </div>
+</header>
+
+<!-- RUNNING TOTAL BAR — appears after first order -->
+<div class="running-bar" id="running-bar">
+  <div class="running-bar-left">
+    <div class="running-bar-label">Session Total</div>
+    <div class="running-bar-amount" id="running-bar-amount">₱0.00</div>
+    <div class="running-bar-sub" id="running-bar-sub">0 orders sent</div>
+  </div>
+  <button class="running-bar-btn" onclick="openBillScreen()">Request Bill →</button>
+</div>
+
+<div class="hero-band">
+  <div class="hero-tagline">Authentic Filipino Cuisine · Est. 2003</div>
+  <div class="hero-title" id="hero-title">Kumain na tayo!</div>
+  <div class="hero-sub" id="hero-sub">Order directly from your table — we'll bring it right to you.</div>
+</div>
+
+<div class="featured-section">
+  <div class="section-header">
+    <div class="section-title">⭐ Featured Dishes</div>
+    <span class="section-badge">BESTSELLERS</span>
+  </div>
+  <div class="featured-scroll" id="featured-scroll"></div>
+</div>
+
+<div class="search-wrap" style="padding-top:20px;">
+  <span class="search-icon">🔍</span>
+  <input class="search-input" type="search" id="search-input" placeholder="Search dishes..." oninput="handleSearch(this.value)">
+</div>
+
+<div class="sticky-cats" id="sticky-cats">
+  <div class="cats-scroll" id="cats-scroll"></div>
+</div>
+
+<div class="menu-body" id="menu-body"></div>
+
+<button class="cart-fab" id="cart-fab" onclick="openCart()" aria-label="View cart">
+  🛒<span class="cart-fab-count" id="cart-fab-count">0</span>
+</button>
+
+<!-- CART -->
+<div class="cart-overlay" id="cart-overlay" onclick="closeCart()"></div>
+<div class="cart-drawer" id="cart-drawer">
+  <div class="cart-handle"></div>
+  <div class="cart-header">
+    <div class="cart-title">Your Order</div>
+    <button class="cart-close" onclick="closeCart()">✕</button>
+  </div>
+  <div class="cart-items" id="cart-items-list"></div>
+  <div class="cart-footer">
+    <div class="cart-totals">
+      <div class="cart-total-label">This batch</div>
+      <div class="cart-total-amt" id="cart-total-amt">₱0.00</div>
+    </div>
+    <button class="checkout-btn" id="checkout-btn" onclick="goToCheckout()" disabled>Send to Kitchen</button>
+  </div>
+</div>
+
+<!-- DISH MODAL -->
+<div class="modal-overlay" id="dish-modal" onclick="closeDishModal(event)">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-header"><div class="modal-title">Add to Order</div></div>
+    <div class="modal-body" id="dish-modal-body"></div>
+  </div>
+</div>
+
+<!-- CONFIRM ORDER (name+notes only — no payment) -->
+<div class="fullscreen" id="checkout-screen">
+  <div class="fs-header">
+    <button class="back-btn" onclick="closeCheckout()">←</button>
+    <div class="fs-title">Send to Kitchen</div>
+  </div>
+  <div class="fs-body">
+    <div class="info-note">
+      <div class="info-note-icon">💡</div>
+      <div>You <strong>pay at the end of your meal</strong> — not now. Just confirm your order and we'll start cooking. You can order more anytime.</div>
+    </div>
+    <div class="form-card" id="guest-info-card">
+      <div class="form-card-title" id="guest-card-title">Your Info</div>
+      <div id="name-field-wrap">
+        <div class="form-field">
+          <label>Your Name *</label>
+          <input class="form-input" type="text" id="guest-name" placeholder="e.g. Maria Santos">
+        </div>
+      </div>
+      <div id="pax-field-wrap">
+        <div class="form-field">
+          <label>Number of Guests</label>
+          <select class="form-input form-select" id="guest-pax">
+            <option value="1">1 person</option><option value="2">2 persons</option>
+            <option value="3">3 persons</option><option value="4">4 persons</option>
+            <option value="5">5 persons</option><option value="6">6 persons</option>
+            <option value="7">7 persons</option><option value="8">8+ persons</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="form-card">
+      <div class="form-card-title">Special Requests</div>
+      <div class="form-field">
+        <label>Anything the kitchen should know?</label>
+        <textarea class="form-input special-req-input" style="min-height:70px;resize:none;" id="special-request" placeholder="e.g. Less spicy, extra sawsawan, peanut allergy..."></textarea>
+      </div>
+    </div>
+    <div class="form-card">
+      <div class="form-card-title">Order Summary</div>
+      <div id="order-summary-list"></div>
+    </div>
+    <button class="submit-order-btn" onclick="submitOrder()">🍽️ Send to Kitchen</button>
+  </div>
+</div>
+
+<!-- CONFIRMATION SCREEN -->
+<div class="fullscreen" id="confirm-screen">
+  <div class="fs-header">
+    <div style="width:38px;"></div>
+    <div class="fs-title">Order Sent!</div>
+    <div style="width:38px;"></div>
+  </div>
+  <div class="fs-body">
+    <div class="confirm-icon">✅</div>
+    <div class="confirm-title">Kitchen Received!</div>
+    <div class="confirm-sub" id="confirm-sub">Your order is heading to the kitchen.</div>
+    <div class="confirm-ref">
+      <div class="confirm-ref-label">Order Reference</div>
+      <div class="confirm-ref-num" id="confirm-ref-num">TPN-000000</div>
+    </div>
+
+    <div class="progress-card">
+      <div class="progress-card-title">Order Status</div>
+      <div class="progress-steps" id="progress-steps">
+        <div class="progress-step">
+          <div class="progress-dot active" id="dot-received">✓</div>
+          <div class="progress-label active" id="lbl-received">Received</div>
+        </div>
+        <div class="progress-line-wrap"><div class="progress-line" id="line-1"></div></div>
+        <div class="progress-step">
+          <div class="progress-dot" id="dot-preparing">🍳</div>
+          <div class="progress-label" id="lbl-preparing">Preparing</div>
+        </div>
+        <div class="progress-line-wrap"><div class="progress-line" id="line-2"></div></div>
+        <div class="progress-step">
+          <div class="progress-dot" id="dot-ready">🔔</div>
+          <div class="progress-label" id="lbl-ready">Ready</div>
+        </div>
+        <div class="progress-line-wrap"><div class="progress-line" id="line-3"></div></div>
+        <div class="progress-step">
+          <div class="progress-dot" id="dot-served">🍽️</div>
+          <div class="progress-label" id="lbl-served">Served</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="session-total-card" id="session-total-card">
+      <div class="session-total-header">
+        <div class="session-total-label">Table Session</div>
+        <div style="font-size:11px;color:var(--text-muted)" id="session-orders-count">—</div>
+      </div>
+      <div class="session-total-body" id="session-orders-list"></div>
+    </div>
+
+    <div class="confirm-action-row">
+      <button class="more-order-btn" onclick="orderMore()">+ Order More Items</button>
+      <button class="request-bill-btn" onclick="openBillScreen()">💳 Ready to Pay? Request Bill</button>
+      <button class="call-staff-btn" onclick="callStaff()">🤚 Call Staff</button>
+    </div>
+  </div>
+</div>
+
+<!-- BILL REQUEST SCREEN -->
+<div class="fullscreen" id="bill-screen">
+  <div class="fs-header">
+    <button class="back-btn" onclick="closeBillScreen()">←</button>
+    <div class="fs-title">Request Your Bill</div>
+  </div>
+  <div class="fs-body" style="display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:32px;">
+    <div style="font-size:48px;margin-bottom:16px;">💳</div>
+    <div style="font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--text);margin-bottom:8px;">Ready to settle up?</div>
+    <div style="font-size:14px;color:var(--text-muted);margin-bottom:24px;font-family:'Lora',serif;font-style:italic;max-width:320px;line-height:1.6;">Our staff will come to your table as soon as you confirm. You can still order more before they arrive.</div>
+
+    <div class="bill-total-banner">
+      <div class="bill-total-label">Total — Table <span id="bill-table-num"></span></div>
+      <div class="bill-total-amount" id="bill-total-amount">₱0.00</div>
+      <div class="bill-total-sub" id="bill-total-sub"></div>
+    </div>
+
+    <div class="bill-breakdown">
+      <div style="font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:10px;">Order Breakdown</div>
+      <div id="bill-breakdown-list"></div>
+    </div>
+
+    <div style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:10px;width:100%;max-width:380px;text-align:left;">How would you like to pay?</div>
+    <div class="pay-methods-grid">
+      <div class="pay-method-card selected" data-pay="cash" onclick="selectBillPayMethod('cash')"><div class="pay-method-icon">💵</div><div class="pay-method-name">Cash</div><div class="pay-method-sub">Staff will come to your table</div></div>
+      <div class="pay-method-card" data-pay="gcash" onclick="selectBillPayMethod('gcash')"><div class="pay-method-icon">📱</div><div class="pay-method-name">GCash</div><div class="pay-method-sub">Scan QR for exact amount</div></div>
+      <div class="pay-method-card" data-pay="paymaya" onclick="selectBillPayMethod('paymaya')"><div class="pay-method-icon">📲</div><div class="pay-method-name">PayMaya</div><div class="pay-method-sub">Scan QR for exact amount</div></div>
+      <div class="pay-method-card" data-pay="card" onclick="selectBillPayMethod('card')"><div class="pay-method-icon">💳</div><div class="pay-method-name">Card</div><div class="pay-method-sub">Terminal brought to you</div></div>
+    </div>
+    <button class="bill-submit-btn" onclick="submitBillRequest()">Request Bill Now</button>
+    <div class="bill-note">Once you tap Request Bill, our staff will come to your table. You can still order more — just close this screen.</div>
+  </div>
+</div>
+
+<!-- QR SCREEN (bill-out only) -->
+<div class="fullscreen" id="qr-screen">
+  <div class="fs-header">
+    <button class="back-btn" onclick="closeQrScreen()">←</button>
+    <div class="fs-title" id="qr-screen-title">Pay with GCash</div>
+  </div>
+  <div class="fs-body">
+    <div class="qr-card">
+      <div class="qr-provider-logo" id="qr-provider-logo">📱</div>
+      <div class="qr-provider-name" id="qr-provider-name">GCash</div>
+      <div class="qr-amount-label">Total Bill</div>
+      <div class="qr-amount" id="qr-amount">₱0.00</div>
+      <div class="qr-image-wrap"><img id="qr-image" src="" alt="Payment QR Code" width="200" height="200"></div>
+      <div class="qr-instruction" id="qr-instruction"></div>
+    </div>
+    <button class="qr-confirm-btn" onclick="confirmQrPayment()">✓ Payment Sent — Notify Staff</button>
+    <button class="qr-back-btn" onclick="closeQrScreen()">← Go Back</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const urlParams = new URLSearchParams(window.location.search);
+const TABLE_NUM = parseInt(urlParams.get('table')) || 1;
+const BRANCH = urlParams.get('branch') || 'Las Piñas';
+const BRANCH_ID = urlParams.get('branchId') || 'laspinas';
+const SESSION_KEY = 'tpn_session_' + BRANCH_ID + '_t' + TABLE_NUM;
+
+// Supabase-resolved IDs (loaded async on startup)
+let TABLE_UUID = null;
+let BRANCH_UUID = null;
+async function resolveTableIds() {
+  try {
+    const branch = await TPN.getBranchByCode(BRANCH_ID);
+    if (!branch) { console.error('Branch not found:', BRANCH_ID); return; }
+    BRANCH_UUID = branch.id;
+    const table = await TPN.getTableByNumber(BRANCH_ID, TABLE_NUM);
+    if (!table) { console.error('Table not found:', TABLE_NUM, 'at', BRANCH_ID); return; }
+    TABLE_UUID = table.id;
+  } catch(e) { console.error('resolveTableIds failed:', e); }
+}
+resolveTableIds();
+
+let lang = 'tl';
+let cart = [];
+let sessionOrders = loadSessionOrders();
+let sessionTotal = sessionOrders.reduce((s,o)=>s+o.total,0);
+let activeDish = null, activeQty = 1, activePaxChoice = null;
+let searchQuery = '', activeCategory = 'all';
+let selectedBillPayMethod = 'cash';
+let guestName = '', guestPax = '1';
+let guestInfoLocked = sessionOrders.length > 0;
+let progressTimer = null;
+
+function loadSessionOrders() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SESSION_KEY) || '[]');
+    return saved.filter(o => Date.now() - new Date(o.timestamp).getTime() < 8*3600000);
+  } catch(e) { return []; }
+}
+function saveSessionOrders() {
+  try { localStorage.setItem(SESSION_KEY, JSON.stringify(sessionOrders)); } catch(e) {}
+}
+
+const menuData = [
+  { cat:'silogs', catName:'Silogs', catNameTl:'Silogs', items:[
+    { id:'tap', name:'Tapsilog', emoji:'🍳', price:139, best:true, available:true, desc:'Cured beef tapa, garlic rice, sunny-side egg' },
+    { id:'tor', name:'Tosilog', emoji:'🥓', price:129, best:true, available:true, desc:'Sweet pork tocino, garlic rice, fried egg' },
+    { id:'long', name:'Longsilog', emoji:'🌭', price:125, available:true, desc:'Filipino longanisa sausage with sinangag and itlog' },
+    { id:'bang', name:'Bangsilog', emoji:'🐟', price:135, available:true, desc:'Crispy fried bangus, garlic rice, egg' },
+    { id:'hot', name:'Hotsilog', emoji:'🌭', price:99, available:true, desc:'Classic hotdog, garlic rice, egg' },
+  ]},
+  { cat:'chicken', catName:'Chicken', catNameTl:'Manok', items:[
+    { id:'adb', name:'Chicken Adobo', emoji:'🍗', pricePax:{'2-3':289,'4-6':489}, best:true, available:true, desc:'Slow-braised in vinegar, soy, garlic & bay leaf' },
+    { id:'inasal', name:'Chicken Inasal', emoji:'🔥', pricePax:{'2-3':319,'4-6':549}, best:true, available:true, desc:'Visayan-style grilled chicken marinated in calamansi & annatto' },
+    { id:'tinola', name:'Chicken Tinola', emoji:'🍲', pricePax:{'2-3':299,'4-6':499}, available:true, desc:'Ginger broth with green papaya and malunggay leaves' },
+    { id:'fried', name:'Pritong Manok', emoji:'🍗', price:175, available:true, desc:'Golden-fried whole leg quarter, crispy and juicy' },
+  ]},
+  { cat:'pork', catName:'Pork', catNameTl:'Baboy', items:[
+    { id:'lechon', name:'Lechon Kawali', emoji:'🥩', pricePax:{'2-3':349,'4-6':599}, best:true, available:true, desc:'Deep-fried pork belly, crackling skin, liver sauce on the side' },
+    { id:'sini', name:'Sinigang na Baboy', emoji:'🍲', pricePax:{'2-3':329,'4-6':549}, best:true, available:true, desc:'Tamarind-sour pork soup with kangkong and radish' },
+    { id:'kare', name:'Kare-Kare', emoji:'🥜', pricePax:{'2-3':359,'4-6':589}, available:true, desc:'Peanut stew with oxtail, banana blossom, bagoong on the side' },
+  ]},
+  { cat:'seafood', catName:'Seafood', catNameTl:'Seafood', items:[
+    { id:'sinigmahi', name:'Sinigang na Hipon', emoji:'🦐', pricePax:{'2-3':349,'4-6':589}, best:true, available:true, desc:'Tamarind soup with plump river prawns and vegetables' },
+    { id:'inihitang', name:'Inihaw na Bangus', emoji:'🐟', price:199, available:true, desc:'Stuffed grilled milkfish with tomato, onion, and ginger' },
+  ]},
+  { cat:'veggies', catName:'Vegetables', catNameTl:'Gulay', items:[
+    { id:'pinakbet', name:'Pinakbet', emoji:'🥬', pricePax:{'2-3':249,'4-6':399}, available:true, desc:'Ilocano medley of ampalaya, sitaw, and talong in bagoong' },
+    { id:'laing', name:'Laing', emoji:'🌿', pricePax:{'2-3':229,'4-6':379}, available:true, desc:'Dried taro leaves slow-cooked in coconut milk and chili' },
+  ]},
+  { cat:'merienda', catName:'Merienda', catNameTl:'Merienda', items:[
+    { id:'lumpia', name:'Lumpiang Shanghai', emoji:'🥢', price:149, best:true, available:true, desc:'Crispy meat spring rolls, 6 pieces with sweet chili dip' },
+    { id:'pancit', name:'Pancit Canton', emoji:'🍝', price:159, available:true, desc:'Stir-fried egg noodles with chicken and vegetables' },
+    { id:'arroz', name:'Arroz Caldo', emoji:'🍚', price:95, available:true, desc:'Chicken congee with hard-boiled egg and fried garlic' },
+  ]},
+  { cat:'drinks', catName:'Drinks', catNameTl:'Inumin', items:[
+    { id:'coke', name:'Softdrinks', emoji:'🥤', price:55, available:true, desc:'Coke, Sprite, Royal — your choice' },
+    { id:'buko', name:'Buko Juice', emoji:'🥥', price:79, best:true, available:true, desc:'Fresh young coconut juice' },
+    { id:'water', name:'Mineral Water', emoji:'💧', price:35, available:true, desc:'500ml bottled water' },
+    { id:'sago', name:'Sago at Gulaman', emoji:'🧋', price:65, available:true, desc:'Iced brown sugar drink with tapioca pearls' },
+  ]},
+  { cat:'addons', catName:'Add-ons', catNameTl:'Dagdag', items:[
+    { id:'rice', name:'Plain Rice', emoji:'🍚', price:25, available:true, desc:'Steamed, generous portion' },
+    { id:'garlic-rice', name:'Garlic Rice', emoji:'🍚', price:39, available:true, desc:'Sinangag — crispy fried garlic rice' },
+    { id:'unli', name:'Unli Rice (Dine-In)', emoji:'🍚', price:29, best:true, available:true, desc:'All the rice you can eat' },
+    { id:'egg', name:'Sunny-Side Egg', emoji:'🍳', price:25, available:true, desc:'Add to anything' },
+  ]},
+];
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('header-table-label').textContent = `Table ${TABLE_NUM} · ${BRANCH}`;
+  if(guestInfoLocked && sessionOrders.length){ guestName=sessionOrders[0].name; guestPax=sessionOrders[0].pax; }
+  applyLang(); renderCategoryChips(); renderFeatured(); renderMenu(); updateRunningBar();
+});
+
+const T = {
+  en:{ heroTitle:"Let's eat!", heroSub:"Order directly from your table — we'll bring it right to you." },
+  tl:{ heroTitle:"Kumain na tayo!", heroSub:"Umorder na dito sa mesa — dadalhin namin sa inyo." }
+};
+function applyLang(){ document.getElementById('hero-title').textContent=T[lang].heroTitle; document.getElementById('hero-sub').textContent=T[lang].heroSub; document.getElementById('lang-btn').textContent=lang==='en'?'TL':'EN'; renderCategoryChips(); }
+function toggleLang(){ lang=lang==='en'?'tl':'en'; applyLang(); renderFeatured(); renderMenu(); }
+
+function renderCategoryChips(){
+  const all=lang==='tl'?'Lahat':'All';
+  const cats=[{cat:'all',catName:all,catNameTl:all}].concat(menuData);
+  document.getElementById('cats-scroll').innerHTML=cats.map(c=>`<button class="cat-chip ${activeCategory===c.cat?'active':''}" onclick="setCategory('${c.cat}')">${lang==='tl'?(c.catNameTl||c.catName):c.catName}</button>`).join('');
+}
+function setCategory(cat){ activeCategory=cat; renderCategoryChips(); renderMenu(); if(cat!=='all') setTimeout(()=>{ const el=document.getElementById('cat-'+cat); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); },50); }
+
+function renderFeatured(){
+  const f=[]; menuData.forEach(cat=>cat.items.forEach(item=>{ if(item.best&&item.available) f.push(item); }));
+  document.getElementById('featured-scroll').innerHTML=f.map(item=>{
+    const price=item.price?`₱${item.price}`:`₱${Math.min(...Object.values(item.pricePax))}+`;
+    return `<div class="featured-card" onclick="openDishModal('${item.id}')"><div class="featured-emoji">${item.emoji}</div><div class="featured-body"><div class="featured-tag">BESTSELLER</div><div class="featured-name">${item.name}</div><div class="featured-price">${price}</div><button class="add-mini-btn" onclick="event.stopPropagation();openDishModal('${item.id}')">+ Add</button></div></div>`;
+  }).join('');
+}
+
+function renderMenu(){
+  const q=searchQuery.toLowerCase(); let html=''; let anyVisible=false;
+  menuData.forEach(cat=>{
+    const catName=lang==='tl'?(cat.catNameTl||cat.catName):cat.catName;
+    const items=cat.items.filter(item=>{ if(activeCategory!=='all'&&activeCategory!==cat.cat) return false; if(q&&!item.name.toLowerCase().includes(q)&&!(item.desc||'').toLowerCase().includes(q)) return false; return true; });
+    if(!items.length) return; anyVisible=true;
+    html+=`<div class="cat-section" id="cat-${cat.cat}"><div class="cat-section-title">${catName} <span class="cat-count">(${items.length})</span></div><div class="dish-list">`;
+    items.forEach(item=>{
+      const hasPax=!!item.pricePax;
+      const paxChips=hasPax?`<div class="dish-pax-chips">${Object.entries(item.pricePax).map(([size,price])=>`<span class="dish-pax-chip">${size} pax · ₱${price}</span>`).join('')}</div>`:'';
+      const priceHtml=hasPax?`<div class="dish-price">₱${Math.min(...Object.values(item.pricePax))}<span class="dish-price-sub">+/pax</span></div>`:`<div class="dish-price">₱${item.price}</div>`;
+      const bestTag=item.best?`<div class="dish-tags"><span class="dish-tag tag-best">⭐ BESTSELLER</span></div>`:'';
+      html+=`<div class="dish-card ${item.available?'':'unavailable'}" onclick="${item.available?`openDishModal('${item.id}')`:''}" >
+        <div class="dish-emoji">${item.emoji}</div>
+        <div class="dish-info"><div class="dish-name">${item.name}</div>${item.desc?`<div class="dish-desc">${item.desc}</div>`:''}${bestTag}${paxChips}</div>
+        <div class="dish-right">${priceHtml}<button class="add-dish-btn" ${item.available?`onclick="event.stopPropagation();openDishModal('${item.id}')"`:' disabled'}>${item.available?'+ Add':'Sold Out'}</button></div>
+      </div>`;
+    });
+    html+=`</div></div>`;
+  });
+  document.getElementById('menu-body').innerHTML=anyVisible?html:`<div class="no-results">No dishes found.</div>`;
+}
+function handleSearch(q){ searchQuery=q; if(q) activeCategory='all'; renderCategoryChips(); renderMenu(); }
+
+function findDish(id){ for(const cat of menuData){ const item=cat.items.find(i=>i.id===id); if(item) return item; } return null; }
+function openDishModal(id){ activeDish=findDish(id); if(!activeDish||!activeDish.available) return; activeQty=1; activePaxChoice=activeDish.pricePax?Object.keys(activeDish.pricePax)[0]:null; renderDishModal(); document.getElementById('dish-modal').classList.add('open'); document.body.style.overflow='hidden'; }
+function closeDishModal(e){ if(e&&e.target!==document.getElementById('dish-modal')) return; document.getElementById('dish-modal').classList.remove('open'); document.body.style.overflow=''; }
+function renderDishModal(){
+  const item=activeDish; const hasPax=!!item.pricePax; const cp=hasPax?item.pricePax[activePaxChoice]:item.price; const total=cp*activeQty;
+  let body=`<div class="modal-emoji">${item.emoji}</div><div class="modal-dish-name">${item.name}</div>${item.desc?`<div class="modal-dish-desc">${item.desc}</div>`:''}`;
+  if(hasPax){ body+=`<div class="modal-label">Serving Size</div><div class="pax-options">`; Object.entries(item.pricePax).forEach(([size,price])=>{ body+=`<div class="pax-opt ${activePaxChoice===size?'selected':''}" onclick="selectPax('${size}')"><span class="pax-opt-size">${size} pax</span><span class="pax-opt-price">₱${price}</span></div>`; }); body+=`</div>`; }
+  body+=`<div class="qty-row"><div class="qty-row-label">Quantity</div><div class="qty-control"><button class="qty-btn" onclick="changeQty(-1)">−</button><span class="qty-num">${activeQty}</span><button class="qty-btn" onclick="changeQty(1)">+</button></div></div><div class="modal-label">Special request (optional)</div><textarea class="special-req-input" id="modal-special-req" placeholder="e.g. Extra rice, mas maanghang..."></textarea><button class="modal-add-btn" onclick="addToCart()">+ Add to Order &nbsp;·&nbsp; ₱${total}</button>`;
+  document.getElementById('dish-modal-body').innerHTML=body;
+}
+function selectPax(size){ activePaxChoice=size; renderDishModal(); }
+function changeQty(d){ activeQty=Math.max(1,activeQty+d); renderDishModal(); }
+
+function addToCart(){
+  const item=activeDish; const hasPax=!!item.pricePax; const price=hasPax?item.pricePax[activePaxChoice]:item.price;
+  const specialReq=document.getElementById('modal-special-req')?.value||'';
+  cart.push({ id:item.id+'|'+(activePaxChoice||'single')+'|'+Date.now(), dishId:item.id, name:item.name, emoji:item.emoji, variant:activePaxChoice?activePaxChoice+' pax':null, price, qty:activeQty, specialReq });
+  document.getElementById('dish-modal').classList.remove('open'); document.body.style.overflow=''; updateCartUI(); showToast('🛒 '+item.name+' added!');
+}
+
+function updateCartUI(){
+  const total=cart.reduce((s,i)=>s+i.price*i.qty,0); const count=cart.reduce((s,i)=>s+i.qty,0);
+  const fab=document.getElementById('cart-fab'); fab.querySelector('.cart-fab-count').textContent=count;
+  if(count>0){ fab.classList.add('visible'); fab.classList.remove('shake'); void fab.offsetWidth; fab.classList.add('shake'); } else{ fab.classList.remove('visible'); }
+  document.getElementById('cart-total-amt').textContent=`₱${total.toFixed(2)}`;
+  document.getElementById('checkout-btn').disabled=count===0;
+  const el=document.getElementById('cart-items-list');
+  if(!cart.length){ el.innerHTML=`<div class="cart-empty">🍽️ Your cart is empty.<br>Add some dishes!</div>`; return; }
+  el.innerHTML=cart.map(item=>`<div class="cart-item"><div class="cart-item-emoji">${item.emoji}</div><div class="cart-item-info"><div class="cart-item-name">${item.name}</div>${item.variant?`<div class="cart-item-variant">${item.variant}</div>`:''}${item.specialReq?`<div class="cart-item-variant" style="color:var(--gold)">📝 ${item.specialReq}</div>`:''}<div class="cart-item-qty"><button class="qty-btn" onclick="changeCartQty('${item.id}',-1)">−</button><span class="qty-num">${item.qty}</span><button class="qty-btn" onclick="changeCartQty('${item.id}',1)">+</button></div></div><div class="cart-item-price">₱${(item.price*item.qty).toFixed(2)}</div></div>`).join('');
+}
+function changeCartQty(id,d){ const idx=cart.findIndex(i=>i.id===id); if(idx===-1) return; cart[idx].qty+=d; if(cart[idx].qty<=0){ cart.splice(idx,1); showToast('Removed.'); } updateCartUI(); }
+function openCart(){ document.getElementById('cart-overlay').classList.add('open'); document.getElementById('cart-drawer').classList.add('open'); document.body.style.overflow='hidden'; }
+function closeCart(){ document.getElementById('cart-overlay').classList.remove('open'); document.getElementById('cart-drawer').classList.remove('open'); document.body.style.overflow=''; }
+
+function updateRunningBar(){
+  const bar=document.getElementById('running-bar'); const cats=document.getElementById('sticky-cats');
+  if(sessionOrders.length>0){ bar.classList.add('visible'); cats.classList.add('with-bar'); document.getElementById('running-bar-amount').textContent=`₱${sessionTotal.toFixed(2)}`; document.getElementById('running-bar-sub').textContent=`${sessionOrders.length} order${sessionOrders.length>1?'s':''} sent to kitchen`; }
+  else{ bar.classList.remove('visible'); cats.classList.remove('with-bar'); }
+}
+
+function goToCheckout(){
+  if(!cart.length) return; closeCart(); renderOrderSummary();
+  if(guestInfoLocked){
+    document.getElementById('name-field-wrap').innerHTML=`<div style="padding:4px 0;font-size:15px;font-weight:700;color:var(--text)">${guestName} <span style="font-size:12px;color:var(--text-muted);font-weight:400">· Table ${TABLE_NUM} · ${guestPax} guest(s)</span></div>`;
+    document.getElementById('pax-field-wrap').style.display='none';
+    document.getElementById('guest-card-title').textContent='Adding to your session';
+  } else {
+    document.getElementById('name-field-wrap').innerHTML=`<div class="form-field"><label>Your Name *</label><input class="form-input" type="text" id="guest-name" placeholder="e.g. Maria Santos" value="${guestName}"></div>`;
+    document.getElementById('pax-field-wrap').style.display='';
+    document.getElementById('guest-card-title').textContent='Your Info';
+  }
+  document.getElementById('checkout-screen').classList.add('show');
+}
+function closeCheckout(){ document.getElementById('checkout-screen').classList.remove('show'); }
+
+function renderOrderSummary(){
+  const total=cart.reduce((s,i)=>s+i.price*i.qty,0);
+  let html=cart.map(item=>`<div class="summary-item"><div><span class="summary-item-qty">${item.qty}×</span>${item.name}${item.variant?' ('+item.variant+')':''}</div><span class="summary-item-price">₱${(item.price*item.qty).toFixed(2)}</span></div>`).join('');
+  html+=`<hr class="summary-divider"><div class="summary-total"><span>This batch</span><span class="summary-total-price">₱${total.toFixed(2)}</span></div>`;
+  if(sessionTotal>0) html+=`<div style="display:flex;justify-content:space-between;font-size:13px;color:var(--text-muted);margin-top:4px;font-weight:600"><span>Running total after this</span><span>₱${(sessionTotal+total).toFixed(2)}</span></div>`;
+  document.getElementById('order-summary-list').innerHTML=html;
+}
+
+async function submitOrder(){
+  let name=guestName, pax=guestPax;
+  if(!guestInfoLocked){ name=(document.getElementById('guest-name')?.value||'').trim(); pax=document.getElementById('guest-pax')?.value||'1'; if(!name){ showToast('⚠️ Please enter your name.'); return; } guestName=name; guestPax=pax; }
+  if(!cart.length){ showToast('⚠️ Your cart is empty.'); return; }
+  if(!TABLE_UUID || !BRANCH_UUID){ showToast('⚠️ Table not registered — call staff.'); return; }
+  const specialReq=document.getElementById('special-request').value.trim();
+  const total=cart.reduce((s,i)=>s+i.price*i.qty,0);
+  try {
+    const order = await TPN.createOrder({
+      branchId: BRANCH_UUID,
+      tableId: TABLE_UUID,
+      orderType: 'dine_in',
+      customerName: name,
+      notes: specialReq || null,
+      items: cart.map(c => ({
+        menu_item_id: c.menuItemId || null,
+        name: c.name,
+        unit_price: c.price,
+        quantity: c.qty,
+        pax_size: c.paxSize || null
+      }))
+    });
+    // Local session tracking (survives customer refresh on this device)
+    const sessionOrder = { id: order.order_number, dbId: order.id, table:TABLE_NUM, branch:BRANCH, branchId:BRANCH_ID, name, pax, specialReq, items:JSON.parse(JSON.stringify(cart)), total, timestamp:new Date().toISOString(), status:'received', type:'dine-in' };
+    sessionOrders.push(sessionOrder); sessionTotal+=total; guestInfoLocked=true; saveSessionOrders();
+    cart=[]; updateCartUI(); updateRunningBar(); closeCheckout(); document.getElementById('special-request').value='';
+    showConfirmation(sessionOrder);
+  } catch(e) {
+    console.error('Order submission failed:', e);
+    showToast('⚠️ Could not send order: ' + (e.message || 'connection error'));
+  }
+}
+
+function showConfirmation(order){
+  document.getElementById('confirm-ref-num').textContent=order.id;
+  document.getElementById('confirm-sub').textContent=`${order.name}, your order is heading to the kitchen. We'll bring everything to Table ${TABLE_NUM}.`;
+  setOrderProgress('received'); renderSessionTotalCard();
+  document.getElementById('confirm-screen').classList.add('show');
+  window.scrollTo(0,0);
+  startProgressSimulation();
+}
+
+function renderSessionTotalCard(){
+  const count=sessionOrders.length;
+  document.getElementById('session-orders-count').textContent=`${count} order${count>1?'s':''}`;
+  let html=sessionOrders.map((o,i)=>{ const ic=o.items.reduce((s,it)=>s+it.qty,0); return `<div class="session-order-row"><div><div style="font-size:13px;font-weight:600;">Order ${i+1}</div><div style="font-size:11px;color:var(--text-muted);">${o.id} · ${ic} item${ic>1?'s':''}</div></div><div style="font-size:13px;font-weight:700;">₱${o.total.toFixed(2)}</div></div>`; }).join('');
+  html+=`<div class="session-grand"><span>Total So Far</span><span class="session-grand-price">₱${sessionTotal.toFixed(2)}</span></div>`;
+  document.getElementById('session-orders-list').innerHTML=html;
+}
+
+const progressStates=['received','preparing','ready','served'];
+function setOrderProgress(state){
+  const idx=progressStates.indexOf(state);
+  progressStates.forEach((s,i)=>{ const dot=document.getElementById('dot-'+s); const lbl=document.getElementById('lbl-'+s); if(!dot) return; dot.classList.remove('done','active'); lbl.classList.remove('done','active'); if(i<idx){ dot.classList.add('done'); dot.textContent='✓'; lbl.classList.add('done'); } else if(i===idx){ dot.classList.add('active'); lbl.classList.add('active'); } });
+  for(let i=1;i<=3;i++){ const line=document.getElementById('line-'+i); if(line) line.classList.toggle('done',i<=idx); }
+}
+function startProgressSimulation(){
+  clearTimeout(progressTimer);
+  let step=0;
+  function advance(){ step++; if(step>=progressStates.length) return; setOrderProgress(progressStates[step]); if(step===2) showToast('🔔 Your food is ready! Coming to your table now.'); if(step<progressStates.length-1) progressTimer=setTimeout(advance,[40000,120000,180000][step-1]||120000); }
+  progressTimer=setTimeout(advance,30000);
+}
+
+function orderMore(){ document.getElementById('confirm-screen').classList.remove('show'); showToast('🛒 Keep adding dishes and hit Send again!'); }
+async function callStaff(){
+  if(!TABLE_UUID){ showToast('⚠️ Table not registered.'); return; }
+  showToast('🤚 Staff notified — on their way!');
+  try { await sb.rpc('signal_call_staff', { p_table_id: TABLE_UUID }); }
+  catch(e){ console.error('callStaff failed:', e); }
+}
+
+function openBillScreen(){
+  if(sessionOrders.length===0){ showToast('No orders yet — order something first!'); return; }
+  document.getElementById('bill-table-num').textContent=TABLE_NUM;
+  document.getElementById('bill-total-amount').textContent=`₱${sessionTotal.toFixed(2)}`;
+  const totalItems=sessionOrders.reduce((s,o)=>s+o.items.reduce((ss,it)=>ss+it.qty,0),0);
+  document.getElementById('bill-total-sub').textContent=`${sessionOrders.length} order${sessionOrders.length>1?'s':''} · ${totalItems} items`;
+  let bhtml=sessionOrders.map((o,i)=>{ const ic=o.items.reduce((s,it)=>s+it.qty,0); return `<div class="session-order-row"><div><div style="font-size:13px;font-weight:600;">Order ${i+1}</div><div style="font-size:11px;color:var(--text-muted);">${o.id} · ${ic} items</div></div><div style="font-weight:700;">₱${o.total.toFixed(2)}</div></div>`; }).join('');
+  bhtml+=`<div class="session-grand"><span>Total</span><span class="session-grand-price">₱${sessionTotal.toFixed(2)}</span></div>`;
+  document.getElementById('bill-breakdown-list').innerHTML=bhtml;
+  selectBillPayMethod('cash');
+  document.getElementById('bill-screen').classList.add('show');
+}
+function closeBillScreen(){ document.getElementById('bill-screen').classList.remove('show'); }
+function selectBillPayMethod(method){ selectedBillPayMethod=method; document.querySelectorAll('.pay-method-card').forEach(c=>c.classList.toggle('selected',c.dataset.pay===method)); }
+
+function submitBillRequest(){
+  const method=selectedBillPayMethod;
+  if(method==='gcash'||method==='paymaya'){ closeBillScreen(); showQrPaymentScreen(method,sessionTotal); }
+  else{ notifyBillRequest(method); closeBillScreen(); showBillSentConfirmation(method); }
+}
+async function notifyBillRequest(method){
+  if(!TABLE_UUID){ showToast('⚠️ Table not registered.'); return; }
+  try {
+    await sb.rpc('signal_bill_request', {
+      p_table_id: TABLE_UUID,
+      p_payment_method: method,
+      p_total: sessionTotal
+    });
+  } catch(e){ console.error('bill request failed:', e); }
+}
+function showBillSentConfirmation(method){
+  const payLabels={cash:'Cash',card:'Card Terminal',gcash:'GCash',paymaya:'PayMaya'};
+  document.getElementById('confirm-ref-num').textContent='BILL SENT';
+  document.getElementById('confirm-sub').textContent=`Staff is on the way with your bill. Payment: ${payLabels[method]}.`;
+  setOrderProgress('served'); renderSessionTotalCard();
+  document.getElementById('confirm-screen').classList.add('show');
+  showToast('💳 Staff notified — they\'ll be right over!');
+}
+
+function showQrPaymentScreen(method,amount){
+  const isGcash=method==='gcash'; const provider=isGcash?'GCash':'PayMaya'; const icon=isGcash?'📱':'📲';
+  const qrData=encodeURIComponent(`${provider} Payment\nAmount: PHP ${amount.toFixed(2)}\nMerchant: Tyo Paeng Nyo\nTable: ${TABLE_NUM}\nBranch: ${BRANCH}`);
+  const qrUrl=`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${qrData}&color=8B1A0E&bgcolor=FDF6EC&margin=10`;
+  document.getElementById('qr-screen-title').textContent=`Pay with ${provider}`;
+  document.getElementById('qr-provider-logo').textContent=icon;
+  document.getElementById('qr-provider-name').textContent=provider;
+  document.getElementById('qr-amount').textContent=`₱${amount.toFixed(2)}`;
+  document.getElementById('qr-image').src=qrUrl;
+  document.getElementById('qr-instruction').innerHTML=`Open <strong>${provider}</strong> → tap <strong>Scan QR</strong> → confirm <strong>₱${amount.toFixed(2)}</strong> → send payment.<br><br>Once done, tap <strong>Payment Sent</strong> and our cashier will verify.`;
+  document.getElementById('qr-screen').classList.add('show');
+}
+function closeQrScreen(){ document.getElementById('qr-screen').classList.remove('show'); }
+function confirmQrPayment(){ document.getElementById('qr-screen').classList.remove('show'); notifyBillRequest(selectedBillPayMethod); showBillSentConfirmation(selectedBillPayMethod); }
+
+let toastTimer;
+function showToast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove('show'),2800); }
+</script>
+</body>
+</html>
