@@ -1,0 +1,35 @@
+# Relay + automatic HTTPS. Point a DNS A record at this host first, then:
+#   DOMAIN=desk.example.com docker compose up -d
+services:
+  relay:
+    build: .
+    restart: unless-stopped
+    environment:
+      PORT: 7443
+      AEGIS_DATA_DIR: /data
+      AEGIS_TRUST_PROXY: "true"
+      AEGIS_LOG: info
+    volumes:
+      - aegis-data:/data
+    expose:
+      - "7443"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN=desk.example.com}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - relay
+
+volumes:
+  aegis-data:
+  caddy-data:
+  caddy-config:

@@ -1,0 +1,18 @@
+{
+  "port": 7443,
+  "host": "0.0.0.0",
+  "dataDir": "./data",
+  "sessionHours": 12,
+  "maxFrameBytes": 8388608,
+  "logLevel": "info",
+
+  "_tls": "Leave these null and put Caddy or nginx in front (recommended). Set them to run TLS directly.",
+  "tlsCert": null,
+  "tlsKey": null,
+
+  "_trustProxy": "true if a reverse proxy sets X-Forwarded-For, so audit logs record real client IPs",
+  "trustProxy": false,
+
+  "_allowOpenEnroll": "NEVER true on an internet-facing relay. Any machine could enroll itself.",
+  "allowOpenEnroll": false
+}

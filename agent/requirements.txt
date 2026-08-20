@@ -1,0 +1,14 @@
+# --- required ---
+websocket-client>=1.7.0     # WebSocket transport to the relay
+cryptography>=42.0.0        # P-256 ECDH, HKDF, AES-256-GCM
+mss>=9.0.1                  # fast cross-platform screen capture
+numpy>=1.24                 # vectorised tile diffing
+Pillow>=10.0.0              # JPEG/PNG encoding (fallback encoder)
+
+# --- strongly recommended (agent degrades gracefully without them) ---
+psutil>=5.9.0               # CPU/RAM metrics, process list, kill process
+pystray>=0.19.5             # system tray icon
+opencv-python-headless>=4.8 # 3-6x faster JPEG encode than Pillow
+
+# --- non-Windows only: input injection fallback ---
+pynput>=1.7.6 ; sys_platform != "win32"

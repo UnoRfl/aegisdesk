@@ -1,0 +1,27 @@
+# Caddy gets a real certificate from Let's Encrypt automatically and
+# terminates TLS in front of the relay. WebSockets pass through untouched.
+{$DOMAIN} {
+	encode zstd gzip
+
+	# the tile stream is already compressed; don't waste CPU re-compressing it
+	@ws {
+		header Connection *Upgrade*
+		header Upgrade websocket
+	}
+
+	reverse_proxy relay:7443 {
+		flush_interval -1
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		-Server
+	}
+
+	log {
+		output file /data/access.log
+		format console
+	}
+}

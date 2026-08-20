@@ -1,0 +1,14 @@
+{
+  "name": "aegisdesk-relay",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AegisDesk relay server: device registry, session brokering, encrypted byte relay.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js --log debug"
+  },
+  "engines": { "node": ">=18.0.0" },
+  "dependencies": { "ws": "^8.18.0" },
+  "license": "MIT"
+}

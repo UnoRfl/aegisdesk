@@ -1,0 +1,1747 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<title>AegisDesk</title>
+<style>
+:root{
+  --bg:#0d1117; --bg2:#141b24; --bg3:#1b2430; --line:#26303d;
+  --fg:#e6edf3; --muted:#8b98a8; --dim:#5f6b7a;
+  --accent:#2f81f7; --accent2:#1f6feb; --ok:#2ea043; --warn:#d29922; --danger:#da3633;
+  --radius:10px; --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font:14px/1.5 var(--font);overscroll-behavior:none}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+a{color:var(--accent)}
+.hide{display:none!important}
+
+/* ---------- shell ---------- */
+#app{display:flex;flex-direction:column;height:100%}
+.topbar{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg2);
+  border-bottom:1px solid var(--line);flex:0 0 auto;min-height:52px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:650;letter-spacing:.2px}
+.brand .mark{width:20px;height:20px;border:3px solid var(--accent);border-radius:50%;
+  display:grid;place-items:center}
+.brand .mark i{width:6px;height:6px;background:var(--accent);border-radius:50%;display:block}
+.grow{flex:1}
+.chip{font-size:12px;padding:3px 9px;border-radius:999px;background:var(--bg3);color:var(--muted);
+  border:1px solid var(--line);white-space:nowrap}
+.chip.on{color:#7ee2a8;border-color:#1d4a2e;background:#11251a}
+.chip.off{color:#ff9a9a;border-color:#4a1d1d;background:#251111}
+.btn{padding:8px 14px;border-radius:8px;background:var(--bg3);border:1px solid var(--line);
+  color:var(--fg);font-weight:550;transition:.12s}
+.btn:hover{background:#232e3b;border-color:#37455a}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--accent2);border-color:var(--accent);color:#fff}
+.btn.primary:hover{background:var(--accent)}
+.btn.danger{background:#3a1717;border-color:#5c2020;color:#ff9a9a}
+.btn.danger:hover{background:#4c1c1c}
+.btn.sm{padding:5px 10px;font-size:12.5px}
+.btn.icon{padding:7px 9px;line-height:1}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.field{padding:9px 12px;border-radius:8px;background:#0b1017;border:1px solid var(--line);width:100%}
+.field:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(47,129,247,.15)}
+label.lbl{display:block;font-size:12px;color:var(--muted);margin:12px 0 5px;font-weight:600;
+  text-transform:uppercase;letter-spacing:.5px}
+
+/* ---------- login ---------- */
+#login{flex:1;display:grid;place-items:center;padding:24px}
+.card{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:26px;
+  width:100%;max-width:380px;box-shadow:0 18px 50px rgba(0,0,0,.45)}
+.card h1{margin:0 0 4px;font-size:20px}
+.card p.sub{margin:0 0 6px;color:var(--muted);font-size:13px}
+.err{background:#2a1214;border:1px solid #5c2020;color:#ff9a9a;padding:9px 12px;
+  border-radius:8px;font-size:13px;margin-top:12px}
+.ok{background:#10251a;border:1px solid #1d4a2e;color:#7ee2a8;padding:9px 12px;
+  border-radius:8px;font-size:13px;margin-top:12px}
+
+/* ---------- fleet ---------- */
+#fleet{flex:1;overflow:auto;padding:16px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.toolbar .field{width:auto;flex:1;min-width:180px}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(290px,1fr))}
+.dev{background:var(--bg2);border:1px solid var(--line);border-radius:var(--radius);padding:14px;
+  display:flex;flex-direction:column;gap:9px;transition:.14s}
+.dev:hover{border-color:#37455a;transform:translateY(-1px)}
+.dev.offline{opacity:.62}
+.dev.support{border-color:#2f5d8f;background:linear-gradient(180deg,#16243a,#141b24)}
+.dev.support .waiting{font-size:10.5px;font-weight:700;letter-spacing:1.1px;color:#8fc4ff;
+  margin-bottom:-2px}
+.dev .row1{display:flex;align-items:center;gap:8px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--dim);flex:0 0 auto}
+.dot.on{background:var(--ok);box-shadow:0 0 0 3px rgba(46,160,67,.18)}
+.dot.busy{background:var(--warn);box-shadow:0 0 0 3px rgba(210,153,34,.18)}
+.dev .name{font-weight:650;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dev .id{font:12.5px var(--mono);color:var(--muted);letter-spacing:1px}
+.dev .meta{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 12px}
+.bars{display:flex;gap:8px;font-size:11.5px;color:var(--muted)}
+.bar{flex:1}
+.bar .t{display:flex;justify-content:space-between}
+.bar .track{height:4px;background:#0b1017;border-radius:3px;overflow:hidden;margin-top:2px}
+.bar .fill{height:100%;background:var(--accent);border-radius:3px}
+.bar .fill.warn{background:var(--warn)} .bar .fill.hot{background:var(--danger)}
+.tags{display:flex;gap:5px;flex-wrap:wrap}
+.tag{font-size:11px;padding:2px 7px;border-radius:5px;background:#16202b;
+  border:1px solid var(--line);color:var(--muted)}
+.dev .actions{display:flex;gap:6px;margin-top:2px}
+.empty{text-align:center;color:var(--muted);padding:56px 20px}
+.empty code{background:var(--bg3);padding:2px 7px;border-radius:5px;font:12.5px var(--mono);
+  display:inline-block;margin-top:6px}
+
+/* ---------- session ---------- */
+#session{flex:1;display:flex;flex-direction:column;min-height:0;background:#000}
+.sbar{display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--bg2);
+  border-bottom:1px solid var(--line);flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+.sbar::-webkit-scrollbar{display:none}
+.sbar select{background:var(--bg3);border:1px solid var(--line);border-radius:7px;padding:6px 8px;font-size:12.5px}
+.sbar .btn,.sbar select,.sbar .chip{white-space:nowrap;flex:0 0 auto}
+.stage{flex:1;position:relative;overflow:hidden;display:grid;place-items:center;background:#000;touch-action:none}
+#screen{display:block;image-rendering:auto;cursor:none;max-width:100%;max-height:100%}
+#screen.native{max-width:none;max-height:none}
+#cursor{position:absolute;width:14px;height:20px;pointer-events:none;
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.8));transition:none;z-index:5}
+.overlay{position:absolute;inset:0;display:grid;place-items:center;background:rgba(5,8,12,.86);
+  z-index:20;text-align:center;padding:24px}
+.stats{position:absolute;left:8px;bottom:8px;background:rgba(8,12,18,.8);border:1px solid var(--line);
+  border-radius:8px;padding:7px 10px;font:11.5px var(--mono);color:var(--muted);z-index:10;
+  pointer-events:none;white-space:pre;line-height:1.6}
+.toast-wrap{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:6px;z-index:30}
+.toast{background:rgba(12,18,26,.95);border:1px solid var(--line);border-radius:8px;
+  padding:8px 12px;font-size:12.5px;max-width:280px;animation:slide .2s}
+.toast.warn{border-color:#5c4a20;color:#ffd88a} .toast.error{border-color:#5c2020;color:#ff9a9a}
+@keyframes slide{from{opacity:0;transform:translateX(12px)}}
+
+/* ---------- panel ---------- */
+.panel{position:absolute;right:0;top:0;bottom:0;width:min(460px,100%);background:var(--bg2);
+  border-left:1px solid var(--line);z-index:25;display:flex;flex-direction:column;
+  box-shadow:-14px 0 40px rgba(0,0,0,.5)}
+.panel header{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line)}
+.panel header b{flex:1}
+.panel .body{flex:1;overflow:auto;padding:12px}
+.tabs{display:flex;gap:4px;padding:6px 8px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tabs button{padding:6px 11px;border-radius:7px;font-size:12.5px;color:var(--muted)}
+.tabs button.sel{background:var(--bg3);color:var(--fg)}
+table.tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+table.tbl th{text-align:left;color:var(--muted);font-weight:600;padding:6px 8px;
+  border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg2)}
+table.tbl td{padding:5px 8px;border-bottom:1px solid #1b2330}
+table.tbl tr.clickable:hover{background:var(--bg3);cursor:pointer}
+.crumb{display:flex;gap:4px;align-items:center;font:12px var(--mono);color:var(--muted);
+  margin-bottom:8px;word-break:break-all}
+.dropzone{border:1.5px dashed var(--line);border-radius:9px;padding:14px;text-align:center;
+  color:var(--muted);font-size:12.5px;margin-bottom:10px}
+.dropzone.hot{border-color:var(--accent);background:rgba(47,129,247,.07);color:var(--fg)}
+.xfer{background:var(--bg3);border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:12.5px}
+.xfer .track{height:4px;background:#0b1017;border-radius:3px;margin-top:5px;overflow:hidden}
+.xfer .fill{height:100%;background:var(--accent)}
+#term{background:#05080c;border-radius:8px;padding:10px;font:12.5px/1.45 var(--mono);
+  white-space:pre-wrap;word-break:break-word;height:calc(100% - 52px);overflow:auto;color:#d6e2f0}
+#termIn{margin-top:8px;font:12.5px var(--mono)}
+.kv{display:grid;grid-template-columns:130px 1fr;gap:4px 10px;font-size:12.5px}
+.kv dt{color:var(--muted)} .kv dd{margin:0;word-break:break-word}
+.sec{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+
+/* ---------- keyboard helper for phones ---------- */
+#softkeys{display:flex;gap:5px;padding:6px 8px;background:var(--bg2);border-top:1px solid var(--line);
+  overflow-x:auto;flex:0 0 auto}
+#softkeys button{padding:7px 10px;border-radius:7px;background:var(--bg3);border:1px solid var(--line);
+  font-size:12px;white-space:nowrap}
+#softkeys button.held{background:var(--accent2);border-color:var(--accent);color:#fff}
+#hiddenInput{position:absolute;left:-9999px;opacity:0;width:1px;height:1px}
+
+@media (max-width:640px){
+  .topbar{padding:8px 10px}
+  #fleet{padding:10px}
+  .grid{grid-template-columns:1fr}
+  .panel{width:100%}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ===================== login ===================== -->
+  <div id="login">
+    <form class="card" id="loginForm" autocomplete="on">
+      <div class="brand" style="margin-bottom:14px"><span class="mark"><i></i></span> AegisDesk</div>
+      <h1>Sign in</h1>
+      <p class="sub">Operator account on this relay.</p>
+      <label class="lbl" for="lu">Username</label>
+      <input class="field" id="lu" name="username" autocomplete="username" autocapitalize="off" spellcheck="false" required>
+      <label class="lbl" for="lp">Password</label>
+      <input class="field" id="lp" name="password" type="password" autocomplete="current-password" required>
+      <button class="btn primary" id="loginBtn" style="width:100%;margin-top:18px">Sign in</button>
+      <div id="loginErr" class="err hide"></div>
+      <p class="sub" style="margin-top:14px;font-size:12px" id="relayNote"></p>
+    </form>
+  </div>
+
+  <!-- ===================== fleet ===================== -->
+  <div id="fleetWrap" class="hide" style="display:flex;flex-direction:column;flex:1;min-height:0">
+    <div class="topbar">
+      <div class="brand"><span class="mark"><i></i></span> AegisDesk</div>
+      <span class="chip" id="wsChip">connecting…</span>
+      <span class="grow"></span>
+      <button class="btn sm" id="adminBtn">Admin</button>
+      <button class="btn sm" id="logoutBtn">Sign out</button>
+    </div>
+    <div id="fleet">
+      <div class="toolbar">
+        <input class="field" id="search" placeholder="Search name, ID, OS, tag…" autocapitalize="off" spellcheck="false">
+        <select class="field" id="groupSel" style="width:auto;flex:0 0 auto"><option value="">All groups</option></select>
+        <label class="chip" style="cursor:pointer"><input type="checkbox" id="onlyOnline"> online only</label>
+        <button class="btn sm" id="refreshBtn">Refresh</button>
+      </div>
+      <div class="grid" id="devGrid"></div>
+      <div class="empty hide" id="fleetEmpty"></div>
+    </div>
+  </div>
+
+  <!-- ===================== session ===================== -->
+  <div id="session" class="hide">
+    <div class="sbar">
+      <button class="btn sm" id="backBtn">← Devices</button>
+      <span class="chip" id="sessName">—</span>
+      <span class="chip hide" id="sessAuth">locked</span>
+      <span class="grow"></span>
+      <select id="monSel" title="Monitor"></select>
+      <select id="qualSel" title="Quality">
+        <option value="auto">Auto</option><option value="speed">Speed</option>
+        <option value="balanced">Balanced</option><option value="quality">Quality</option>
+      </select>
+      <select id="fitSel" title="Scaling">
+        <option value="fit">Fit</option><option value="native">1:1</option><option value="fill">Stretch</option>
+      </select>
+      <button class="btn sm icon" id="kbBtn" title="Show keyboard">⌨</button>
+      <button class="btn sm" id="cadBtn" title="Send Ctrl+Alt+Del">C-A-D</button>
+      <button class="btn sm" id="clipBtn" title="Clipboard">Clip</button>
+      <button class="btn sm" id="filesBtn">Files</button>
+      <button class="btn sm" id="shellBtn">Shell</button>
+      <button class="btn sm" id="infoBtn">Info</button>
+      <button class="btn sm icon" id="statsBtn" title="Toggle stats">📊</button>
+      <button class="btn sm danger" id="hangupBtn">Disconnect</button>
+    </div>
+    <div class="stage" id="stage">
+      <canvas id="screen"></canvas>
+      <svg id="cursor" class="hide" viewBox="0 0 14 20"><path d="M1 1l11 9-4.6.7 3 5.4-2.2 1.3-3-5.4L1 15z"
+        fill="#fff" stroke="#000" stroke-width="1.1"/></svg>
+      <div class="stats hide" id="stats"></div>
+      <div class="toast-wrap" id="toasts"></div>
+      <div class="overlay" id="overlay">
+        <div style="max-width:360px;width:100%">
+          <div id="ovText" style="color:var(--muted)">Connecting…</div>
+          <form id="pwForm" class="hide" style="margin-top:14px;text-align:left">
+            <label class="lbl" id="pwLabel">This computer needs its access password</label>
+            <input class="field" id="pwIn" type="password" autocomplete="off">
+            <button class="btn primary" style="width:100%;margin-top:12px">Unlock</button>
+            <div id="pwErr" class="err hide"></div>
+          </form>
+        </div>
+      </div>
+      <div class="panel hide" id="panel">
+        <header><b id="panelTitle">Panel</b><button class="btn sm icon" id="panelClose">✕</button></header>
+        <div class="tabs hide" id="panelTabs"></div>
+        <div class="body" id="panelBody"></div>
+      </div>
+    </div>
+    <div id="softkeys" class="hide"></div>
+    <input id="hiddenInput" autocapitalize="off" autocomplete="off" spellcheck="false">
+  </div>
+
+  <!-- ===================== admin ===================== -->
+  <div id="admin" class="hide" style="display:none;flex-direction:column;flex:1;min-height:0">
+    <div class="topbar">
+      <button class="btn sm" id="adminBack">← Devices</button>
+      <div class="brand" style="margin-left:6px">Admin</div>
+      <span class="grow"></span>
+    </div>
+    <div style="flex:1;overflow:auto;padding:16px" id="adminBody"></div>
+  </div>
+
+</div>
+<script>
+"use strict";
+/* ===========================================================================
+   AegisDesk viewer.
+   Talks the same protocol as agent/aegis_agent/protocol.py. The relay only
+   ever sees ciphertext: keys are derived here and in the agent via ECDH.
+   =========================================================================== */
+
+/* ------------------------------------------------------------- tiny helpers */
+const $ = (id) => document.getElementById(id);
+const el = (tag, attrs = {}, ...kids) => {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'class') n.className = v;
+    else if (k === 'html') n.innerHTML = v;
+    else if (k === 'text') n.textContent = v;
+    else if (k.startsWith('on')) n.addEventListener(k.slice(2).toLowerCase(), v);
+    else if (v !== null && v !== undefined && v !== false) n.setAttribute(k, v);
+  }
+  for (const kid of kids.flat()) if (kid != null) n.append(kid.nodeType ? kid : String(kid));
+  return n;
+};
+const fmtBytes = (n) => {
+  if (!n) return '0 B';
+  const u = ['B','KB','MB','GB','TB']; let i = 0;
+  while (n >= 1024 && i < u.length - 1) { n /= 1024; i++; }
+  return `${n.toFixed(i === 0 ? 0 : 1)} ${u[i]}`;
+};
+const fmtAgo = (ts) => {
+  if (!ts) return 'never';
+  const s = Math.max(0, (Date.now() - ts) / 1000);
+  if (s < 60) return `${Math.round(s)}s ago`;
+  if (s < 3600) return `${Math.round(s / 60)}m ago`;
+  if (s < 86400) return `${Math.round(s / 3600)}h ago`;
+  return `${Math.round(s / 86400)}d ago`;
+};
+const fmtDur = (s) => {
+  s = Math.round(s);
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
+  return h ? `${h}h ${m}m` : (m ? `${m}m ${s % 60}s` : `${s}s`);
+};
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+/* storage that degrades to memory if the browser blocks it */
+const store = (() => {
+  const mem = {};
+  let ok = true;
+  try { localStorage.setItem('__t', '1'); localStorage.removeItem('__t'); }
+  catch { ok = false; }
+  return {
+    get: (k) => { try { return ok ? localStorage.getItem(k) : mem[k] ?? null; } catch { return mem[k] ?? null; } },
+    set: (k, v) => { try { ok ? localStorage.setItem(k, v) : (mem[k] = v); } catch { mem[k] = v; } },
+    del: (k) => { try { ok ? localStorage.removeItem(k) : delete mem[k]; } catch { delete mem[k]; } },
+  };
+})();
+
+/* ------------------------------------------------------------- constants */
+const CH = {
+  AUTH_CHALLENGE: 0x01, AUTH_RESPONSE: 0x02, AUTH_RESULT: 0x03,
+  SCREEN_INFO: 0x10, TILE_FRAME: 0x11, CURSOR: 0x12,
+  INPUT: 0x20, CLIPBOARD: 0x30, FILE_CTL: 0x40, FILE_DATA: 0x41,
+  SHELL_CTL: 0x50, SHELL_OUT: 0x51, SYSINFO: 0x60,
+  CONTROL: 0x70, STATUS: 0x71, PING: 0x7E, PONG: 0x7F,
+};
+const DATA_MAGIC = 0xD1;
+const DIR_A2V = 1, DIR_V2A = 2;
+const CHUNK = 128 * 1024, WINDOW = 32;
+const te = new TextEncoder(), td = new TextDecoder();
+
+/* ------------------------------------------------------------- crypto */
+const subtle = window.crypto && window.crypto.subtle;
+const b64e = (b) => { let s = ''; const u = new Uint8Array(b); for (const x of u) s += String.fromCharCode(x); return btoa(s); };
+const b64d = (s) => { const t = atob(s); const u = new Uint8Array(t.length); for (let i = 0; i < t.length; i++) u[i] = t.charCodeAt(i); return u; };
+const cat = (...arrs) => {
+  const total = arrs.reduce((n, a) => n + a.length, 0);
+  const out = new Uint8Array(total); let o = 0;
+  for (const a of arrs) { out.set(a, o); o += a.length; }
+  return out;
+};
+const u32be = (n) => { const b = new Uint8Array(4); new DataView(b.buffer).setUint32(0, n >>> 0, false); return b; };
+
+async function genKeyPair() {
+  const kp = await subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, false, ['deriveBits']);
+  const pub = new Uint8Array(await subtle.exportKey('raw', kp.publicKey));
+  return { priv: kp.privateKey, pub };
+}
+async function deriveSessionKey(priv, agentPubRaw, sid, viewerPub, agentPub) {
+  const peer = await subtle.importKey('raw', agentPubRaw, { name: 'ECDH', namedCurve: 'P-256' }, false, []);
+  const shared = new Uint8Array(await subtle.deriveBits({ name: 'ECDH', public: peer }, priv, 256));
+  const salt = new Uint8Array(await subtle.digest('SHA-256',
+    cat(te.encode('aegisdesk-v1-salt'), u32be(sid), viewerPub, agentPub)));
+  const hk = await subtle.importKey('raw', shared, 'HKDF', false, ['deriveBits']);
+  const bits = new Uint8Array(await subtle.deriveBits(
+    { name: 'HKDF', hash: 'SHA-256', salt, info: te.encode('aegisdesk-v1-data') }, hk, 256));
+  return subtle.importKey('raw', bits, 'AES-GCM', false, ['encrypt', 'decrypt']);
+}
+function nonceFor(dir, ctr) {
+  const n = new Uint8Array(12); const dv = new DataView(n.buffer);
+  dv.setUint32(0, dir, false); dv.setBigUint64(4, BigInt(ctr), false);
+  return n;
+}
+async function authProof(password, salt, iterations, label, sid, viewerPub, agentPub) {
+  const pk = await subtle.importKey('raw', te.encode(password), 'PBKDF2', false, ['deriveBits']);
+  const dk = new Uint8Array(await subtle.deriveBits(
+    { name: 'PBKDF2', hash: 'SHA-256', salt, iterations }, pk, 256));
+  const hk = await subtle.importKey('raw', dk, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const sig = new Uint8Array(await subtle.sign('HMAC', hk,
+    cat(te.encode(label), u32be(sid), viewerPub, agentPub)));
+  return { proof: sig, dk };
+}
+
+/* ------------------------------------------------------------- app state */
+const S = {
+  token: store.get('aegis.token') || '',
+  operator: '', role: '',
+  ws: null, wsReady: false, reconnectTimer: null, reconnectDelay: 1000,
+  recvChain: Promise.resolve(),        // serialises inbound frame processing
+  devices: [], filter: { q: '', group: '', onlineOnly: false },
+  view: 'login',
+  sess: null,           // active session object
+};
+
+/* ------------------------------------------------------------- HTTP api */
+async function api(path, { method = 'GET', body = null } = {}) {
+  const headers = {};
+  if (S.token) headers.Authorization = `Bearer ${S.token}`;
+  if (body) headers['Content-Type'] = 'application/json';
+  const r = await fetch(path, { method, headers, body: body ? JSON.stringify(body) : null });
+  let data = null;
+  try { data = await r.json(); } catch { /* empty body */ }
+  if (r.status === 401) { logout('Session expired — sign in again.'); throw new Error('unauthorized'); }
+  if (!r.ok) throw new Error((data && data.error) || `HTTP ${r.status}`);
+  return data;
+}
+
+/* ------------------------------------------------------------- views */
+function show(view) {
+  S.view = view;
+  $('login').classList.toggle('hide', view !== 'login');
+  $('fleetWrap').classList.toggle('hide', view !== 'fleet');
+  $('session').classList.toggle('hide', view !== 'session');
+  const adm = $('admin');
+  adm.classList.toggle('hide', view !== 'admin');
+  adm.style.display = view === 'admin' ? 'flex' : 'none';
+  $('fleetWrap').style.display = view === 'fleet' ? 'flex' : 'none';
+  $('session').style.display = view === 'session' ? 'flex' : 'none';
+}
+
+function logout(msg) {
+  store.del('aegis.token');
+  S.token = ''; S.operator = '';
+  if (S.ws) { try { S.ws.close(); } catch {} S.ws = null; }
+  if (S.sess) endSession('signed out');
+  show('login');
+  if (msg) { const e = $('loginErr'); e.textContent = msg; e.classList.remove('hide'); }
+}
+
+/* ------------------------------------------------------------- login */
+$('relayNote').textContent = `Relay: ${location.host}`;
+$('loginForm').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  const btn = $('loginBtn'), errBox = $('loginErr');
+  errBox.classList.add('hide');
+  btn.disabled = true; btn.textContent = 'Signing in…';
+  try {
+    const r = await api('/api/login', { method: 'POST',
+      body: { username: $('lu').value.trim(), password: $('lp').value } });
+    S.token = r.token; S.operator = r.username; S.role = r.role;
+    store.set('aegis.token', r.token);
+    $('lp').value = '';
+    startFleet();
+  } catch (e) {
+    errBox.textContent = e.message; errBox.classList.remove('hide');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Sign in';
+  }
+});
+
+/* ------------------------------------------------------------- control socket */
+function connectWs() {
+  if (S.ws && (S.ws.readyState === 0 || S.ws.readyState === 1)) return;
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  const ws = new WebSocket(`${proto}://${location.host}/ws/viewer`);
+  ws.binaryType = 'arraybuffer';
+  S.ws = ws;
+  setChip('connecting…', '');
+
+  ws.onopen = () => {
+    S.reconnectDelay = 1000;
+    ws.send(JSON.stringify({ t: 'auth', token: S.token, label: deviceLabel() }));
+  };
+  ws.onmessage = (ev) => {
+    if (typeof ev.data !== 'string') {
+      // Frames MUST be processed in arrival order. onDataFrame awaits
+      // subtle.decrypt, and a small JSON message can finish decrypting before
+      // an earlier 128 KB chunk does -- which silently truncates file
+      // transfers. Chain them so decrypt order matches wire order.
+      const buf = new Uint8Array(ev.data);
+      S.recvChain = S.recvChain
+        .then(() => onDataFrame(buf))
+        .catch((e) => console.warn('frame dropped', e));
+      return;
+    }
+    let m; try { m = JSON.parse(ev.data); } catch { return; }
+    handleControl(m);
+  };
+  ws.onclose = () => {
+    S.wsReady = false;
+    setChip('offline', 'off');
+    if (S.sess) sessOverlay('Lost connection to the relay. Reconnecting…');
+    if (S.token) {
+      clearTimeout(S.reconnectTimer);
+      S.reconnectTimer = setTimeout(connectWs, S.reconnectDelay);
+      S.reconnectDelay = Math.min(20000, S.reconnectDelay * 1.7);
+    }
+  };
+  ws.onerror = () => setChip('error', 'off');
+}
+function setChip(text, cls) {
+  const c = $('wsChip'); c.textContent = text; c.className = `chip ${cls}`;
+}
+function deviceLabel() {
+  const ua = navigator.userAgent;
+  if (/iPhone/.test(ua)) return 'iPhone';
+  if (/iPad/.test(ua)) return 'iPad';
+  if (/Android/.test(ua)) return 'Android';
+  if (/Mac OS X/.test(ua)) return 'Mac';
+  if (/Windows/.test(ua)) return 'Windows';
+  return 'browser';
+}
+function wsSend(obj) {
+  if (S.ws && S.ws.readyState === 1) S.ws.send(JSON.stringify(obj));
+}
+
+function handleControl(m) {
+  switch (m.t) {
+    case 'authed':
+      S.wsReady = true; S.operator = m.operator; S.role = m.role;
+      setChip(`${m.operator} · ${m.role}`, 'on');
+      $('adminBtn').classList.toggle('hide', m.role !== 'admin');
+      break;
+    case 'devices':
+      S.devices = m.devices || [];
+      renderFleet();
+      if (S.sess) updateSessName();
+      break;
+    case 'session-open': onSessionOpen(m); break;
+    case 'session-denied': onSessionDenied(m); break;
+    case 'session-close':
+      if (S.sess && S.sess.sid === m.sid) endSession(m.reason || 'closed');
+      break;
+    case 'ping': wsSend({ t: 'pong', ts: m.ts }); break;
+    case 'error':
+      if (m.code === 'bad_token') logout('Sign-in expired.');
+      else toast(m.message || m.code, 'error');
+      break;
+  }
+}
+
+/* ------------------------------------------------------------- fleet */
+async function startFleet() {
+  show('fleet');
+  connectWs();
+  try {
+    const r = await api('/api/devices');
+    S.devices = r.devices; renderFleet();
+  } catch { /* ws will deliver the list anyway */ }
+}
+
+function renderFleet() {
+  const grid = $('devGrid'), empty = $('fleetEmpty');
+  const groups = [...new Set(S.devices.map((d) => d.group).filter(Boolean))].sort();
+  const sel = $('groupSel');
+  if (sel.dataset.sig !== groups.join('|')) {
+    sel.dataset.sig = groups.join('|');
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">All groups</option>';
+    groups.forEach((g) => sel.append(el('option', { value: g }, g)));
+    sel.value = groups.includes(cur) ? cur : '';
+  }
+
+  const q = S.filter.q.toLowerCase();
+  const list = S.devices.filter((d) => {
+    if (S.filter.onlineOnly && !d.online) return false;
+    if (S.filter.group && d.group !== S.filter.group) return false;
+    if (!q) return true;
+    return [d.name, d.deviceId, d.os, d.group, (d.tags || []).join(' ')]
+      .join(' ').toLowerCase().includes(q);
+  });
+
+  grid.innerHTML = '';
+  if (!list.length) {
+    empty.classList.remove('hide');
+    empty.innerHTML = S.devices.length
+      ? 'No devices match that filter.'
+      : `<div style="font-size:15px;margin-bottom:6px">No devices enrolled yet</div>
+         <div>Install the agent on a computer and run:</div>
+         <code>python -m aegis_agent setup --relay ${esc(location.host)} --enroll-key &lt;key&gt;</code>
+         <div style="margin-top:10px;font-size:12.5px">Admins can find the enrollment key under <b>Admin</b>.</div>`;
+    return;
+  }
+  empty.classList.add('hide');
+
+  for (const d of list) {
+    const m = d.metrics || {};
+    const bar = (label, val, unit = '%') => {
+      if (val === undefined || val === null) return null;
+      const cls = val > 90 ? 'hot' : val > 70 ? 'warn' : '';
+      return el('div', { class: 'bar' },
+        el('div', { class: 't' }, el('span', {}, label), el('span', {}, `${Math.round(val)}${unit}`)),
+        el('div', { class: 'track' }, el('div', { class: `fill ${cls}`, style: `width:${Math.min(100, val)}%` })));
+    };
+    const card = el('div', { class: `dev ${d.online ? '' : 'offline'} ${d.ephemeral ? 'support' : ''}` },
+      d.ephemeral ? el('div', { class: 'waiting' }, 'WAITING FOR HELP') : null,
+      el('div', { class: 'row1' },
+        el('span', { class: `dot ${d.sessions ? 'busy' : d.online ? 'on' : ''}` }),
+        el('span', { class: 'name', title: d.name }, d.name),
+        el('span', { class: 'id' }, d.deviceId.replace(/(\d{3})(\d{3})(\d{3})/, '$1 $2 $3'))),
+      el('div', { class: 'meta' },
+        el('span', {}, d.os || 'unknown'),
+        d.group ? el('span', {}, `· ${d.group}`) : null,
+        el('span', {}, d.online ? (d.sessions ? `· ${d.sessions} session(s)` : '· online') : `· seen ${fmtAgo(d.lastSeen)}`),
+        d.ephemeral ? el('span', {}, '· one-off session, ask them for the code') : null),
+      (m.cpu !== undefined || m.mem !== undefined || m.disk !== undefined)
+        ? el('div', { class: 'bars' }, bar('CPU', m.cpu), bar('RAM', m.mem), bar('Disk', m.disk)) : null,
+      (d.tags || []).length ? el('div', { class: 'tags' }, d.tags.map((t) => el('span', { class: 'tag' }, t))) : null,
+      el('div', { class: 'actions' },
+        el('button', { class: 'btn sm primary', disabled: !d.online, onclick: () => beginSession(d) },
+          d.online ? 'Connect' : 'Offline'),
+        d.ephemeral ? null : el('button', { class: 'btn sm', onclick: () => editDevice(d) }, 'Edit'),
+        (d.unattended && !d.ephemeral)
+          ? el('span', { class: 'chip', title: 'Has an unattended access password' }, '🔑') : null));
+    grid.append(card);
+  }
+}
+
+$('search').addEventListener('input', (e) => { S.filter.q = e.target.value; renderFleet(); });
+$('groupSel').addEventListener('change', (e) => { S.filter.group = e.target.value; renderFleet(); });
+$('onlyOnline').addEventListener('change', (e) => { S.filter.onlineOnly = e.target.checked; renderFleet(); });
+$('refreshBtn').addEventListener('click', () => wsSend({ t: 'refresh' }));
+$('logoutBtn').addEventListener('click', () => logout());
+
+async function editDevice(d) {
+  const name = prompt(`Name for ${d.deviceId}:`, d.name);
+  if (name === null) return;
+  const group = prompt('Group (blank for none):', d.group || '');
+  if (group === null) return;
+  const tags = prompt('Tags, comma separated:', (d.tags || []).join(', '));
+  if (tags === null) return;
+  try {
+    await api(`/api/devices/${d.deviceId}`, { method: 'PATCH', body: {
+      name, group, tags: tags.split(',').map((t) => t.trim()).filter(Boolean) } });
+    wsSend({ t: 'refresh' });
+  } catch (e) { alert(e.message); }
+}
+
+/* ===========================================================================
+   Session
+   =========================================================================== */
+const canvas = $('screen');
+const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
+
+function newSession(device) {
+  return {
+    sid: 0, device, key: null, priv: null, pub: null, agentPub: null,
+    sendCtr: 0, recvHigh: 0, recvSeen: new Set(), sendChain: Promise.resolve(),
+    authRequired: false, authed: false, salt: null, iterations: 250000,
+    fit: 'fit', width: 0, height: 0, monitors: [], monitor: 1, perms: {},
+    stats: { frames: 0, tiles: 0, bytes: 0, bytesWindow: 0, fps: 0, kbps: 0, rtt: 0, lastTick: performance.now() },
+    keysDown: new Set(), sticky: new Set(),
+    files: { path: null, xfers: new Map(), nextId: 1 },
+    shell: { started: false, buf: '' },
+    clipboard: '', statsOn: false, panel: null, pingTimer: null, statTimer: null,
+    closed: false, lastCursor: null,
+  };
+}
+
+function beginSession(device) {
+  if (S.sess) endSession('switching');
+  const s = newSession(device);
+  S.sess = s;
+  show('session');
+  resetCanvas();
+  $('sessName').textContent = device.name;
+  $('sessAuth').classList.add('hide');
+  sessOverlay(`Connecting to ${device.name}…`);
+  $('qualSel').value = 'auto';
+  $('fitSel').value = 'fit';
+
+  genKeyPair().then(({ priv, pub }) => {
+    s.priv = priv; s.pub = pub;
+    wsSend({ t: 'connect', deviceId: device.deviceId, pub: b64e(pub), label: deviceLabel() });
+  }).catch((e) => sessOverlay(`Browser crypto unavailable: ${e.message}`));
+}
+
+function onSessionDenied(m) {
+  if (!S.sess) return;
+  const why = {
+    offline: 'That computer is offline.',
+    declined_by_user: 'The person at that computer declined the request.',
+    timeout: 'Nobody answered the request on that computer.',
+    agent_error: 'The agent could not start a session.',
+  }[m.reason] || `Connection refused (${m.reason}).`;
+  sessOverlay(why, true);
+}
+
+async function onSessionOpen(m) {
+  const s = S.sess;
+  if (!s) return;
+  s.sid = m.sid;
+  s.agentPub = b64d(m.agentPub);
+  s.authRequired = !!m.authRequired;
+  s.iterations = m.iterations || 250000;
+  s.salt = m.salt ? b64d(m.salt) : null;
+  try {
+    s.key = await deriveSessionKey(s.priv, s.agentPub, s.sid, s.pub, s.agentPub);
+  } catch (e) {
+    sessOverlay(`Key exchange failed: ${e.message}`, true);
+    return;
+  }
+  if (s.authRequired) {
+    $('sessAuth').classList.remove('hide');
+    const oneOff = !!(s.device && s.device.ephemeral);
+    $('sessAuth').textContent = oneOff ? 'code required' : 'password required';
+    $('pwLabel').textContent = oneOff
+      ? 'Ask them to read you the session code shown on their screen'
+      : 'This computer needs its access password';
+    $('pwIn').setAttribute('inputmode', oneOff ? 'numeric' : 'text');
+    $('pwIn').setAttribute('autocomplete', 'off');
+    sessOverlay('', false, true);
+    setTimeout(() => $('pwIn').focus(), 60);
+  } else {
+    s.authed = true;
+    hideOverlay();
+    startSessionTimers();
+  }
+}
+
+function startSessionTimers() {
+  const s = S.sess;
+  clearInterval(s.pingTimer); clearInterval(s.statTimer);
+  s.pingTimer = setInterval(() => {
+    const b = new Uint8Array(8);
+    new DataView(b.buffer).setBigUint64(0, BigInt(Date.now()), false);
+    sendChannel(CH.PING, b);
+  }, 3000);
+  s.statTimer = setInterval(() => {
+    const now = performance.now();
+    const dt = (now - s.stats.lastTick) / 1000;
+    s.stats.lastTick = now;
+    s.stats.fps = +(s.stats.framesWindow / dt || 0).toFixed(1);
+    s.stats.kbps = +((s.stats.bytesWindow / dt) / 1024).toFixed(0);
+    s.stats.framesWindow = 0; s.stats.bytesWindow = 0;
+    if (s.statsOn) drawStats();
+  }, 1000);
+  sendJson(CH.CONTROL, { op: 'quality', mode: 'auto' });
+}
+
+function endSession(reason) {
+  const s = S.sess;
+  if (!s || s.closed) { S.sess = null; show('fleet'); return; }
+  s.closed = true;
+  clearInterval(s.pingTimer); clearInterval(s.statTimer);
+  if (s.sid) wsSend({ t: 'close', sid: s.sid });
+  releaseAllKeys();
+  S.sess = null;
+  show('fleet');
+  if (reason && reason !== 'switching' && reason !== 'signed out') toast(`Session ended: ${reason}`);
+}
+
+function updateSessName() {
+  const s = S.sess; if (!s) return;
+  const d = S.devices.find((x) => x.deviceId === s.device.deviceId);
+  if (d) $('sessName').textContent = d.name;
+}
+
+function sessOverlay(text, isError = false, wantPassword = false) {
+  $('overlay').classList.remove('hide');
+  $('ovText').innerHTML = text ? esc(text) : '';
+  $('ovText').style.color = isError ? '#ff9a9a' : 'var(--muted)';
+  $('pwForm').classList.toggle('hide', !wantPassword);
+  $('pwErr').classList.add('hide');
+}
+function hideOverlay() { $('overlay').classList.add('hide'); }
+
+function resetCanvas() {
+  canvas.width = 16; canvas.height = 9;
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, 16, 9);
+}
+
+/* ------------------------------------------------------------- crypto send/recv */
+function sendChannel(channel, payload) {
+  const s = S.sess;
+  if (!s || !s.key || s.closed) return Promise.resolve();
+  const body = cat(new Uint8Array([channel]), payload instanceof Uint8Array ? payload : new Uint8Array(payload));
+  // Allocating the nonce counter and calling ws.send inside one chained step
+  // keeps counters in the same order as the bytes on the wire. Without this,
+  // two concurrent encrypts can complete out of order and an upload arrives
+  // with its chunks shuffled.
+  s.sendChain = s.sendChain.then(async () => {
+    if (s.closed) return;
+    s.sendCtr += 1;
+    const nonce = nonceFor(DIR_V2A, s.sendCtr);
+    const ct = new Uint8Array(await subtle.encrypt({ name: 'AES-GCM', iv: nonce, tagLength: 128 }, s.key, body));
+    const frame = cat(new Uint8Array([DATA_MAGIC]), u32be(s.sid), nonce, ct);
+    if (S.ws && S.ws.readyState === 1) S.ws.send(frame);
+  }).catch((e) => console.warn('encrypt failed', e));
+  return s.sendChain;
+}
+const sendJson = (channel, obj) => sendChannel(channel, te.encode(JSON.stringify(obj)));
+
+async function onDataFrame(buf) {
+  const s = S.sess;
+  if (!s || !s.key || buf[0] !== DATA_MAGIC) return;
+  const dv = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
+  const sid = dv.getUint32(1, false);
+  if (sid !== s.sid) return;
+  const nonce = buf.subarray(5, 17);
+  const ndv = new DataView(nonce.buffer, nonce.byteOffset, 12);
+  if (ndv.getUint32(0, false) !== DIR_A2V) return;               // reflection guard
+  const ctr = Number(ndv.getBigUint64(4, false));
+  if (ctr === 0 || s.recvSeen.has(ctr) || ctr <= s.recvHigh - 4096) return;   // replay guard
+  let plain;
+  try {
+    plain = new Uint8Array(await subtle.decrypt({ name: 'AES-GCM', iv: nonce, tagLength: 128 },
+      s.key, buf.subarray(17)));
+  } catch { return; }
+  s.recvSeen.add(ctr);
+  if (ctr > s.recvHigh) s.recvHigh = ctr;
+  if (s.recvSeen.size > 8192) {
+    const cut = s.recvHigh - 4096;
+    s.recvSeen = new Set([...s.recvSeen].filter((c) => c > cut));
+  }
+  s.stats.bytes += buf.length; s.stats.bytesWindow = (s.stats.bytesWindow || 0) + buf.length;
+  dispatchInner(plain[0], plain.subarray(1));
+}
+
+function dispatchInner(channel, payload) {
+  const s = S.sess; if (!s) return;
+  switch (channel) {
+    case CH.TILE_FRAME: renderTiles(payload); break;
+    case CH.SCREEN_INFO: onScreenInfo(JSON.parse(td.decode(payload))); break;
+    case CH.CURSOR: onCursor(JSON.parse(td.decode(payload))); break;
+    case CH.AUTH_CHALLENGE: {
+      const m = JSON.parse(td.decode(payload));
+      s.salt = b64d(m.salt); s.iterations = m.iterations || 250000;
+      sessOverlay('', false, true);
+      setTimeout(() => $('pwIn').focus(), 60);
+      break;
+    }
+    case CH.AUTH_RESULT: onAuthResult(JSON.parse(td.decode(payload))); break;
+    case CH.CLIPBOARD: {
+      const m = JSON.parse(td.decode(payload));
+      s.clipboard = m.text || '';
+      if (s.panel === 'clip') renderClipPanel();
+      break;
+    }
+    case CH.FILE_CTL: onFileCtl(JSON.parse(td.decode(payload))); break;
+    case CH.FILE_DATA: onFileData(payload); break;
+    case CH.SHELL_OUT: onShellOut(payload); break;
+    case CH.SYSINFO: onSysinfo(JSON.parse(td.decode(payload))); break;
+    case CH.STATUS: {
+      const m = JSON.parse(td.decode(payload));
+      if (m.message !== 'connected') toast(m.message, m.level);
+      break;
+    }
+    case CH.PING: sendChannel(CH.PONG, payload); break;
+    case CH.PONG: {
+      const sentAt = Number(new DataView(payload.buffer, payload.byteOffset, 8).getBigUint64(0, false));
+      s.stats.rtt = Math.max(0, Date.now() - sentAt);
+      break;
+    }
+  }
+}
+
+/* ------------------------------------------------------------- auth */
+$('pwForm').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  const s = S.sess; if (!s || !s.salt) return;
+  const pw = $('pwIn').value;
+  $('pwErr').classList.add('hide');
+  $('ovText').textContent = 'Checking…';
+  const { proof } = await authProof(pw, s.salt, s.iterations, 'aegisdesk-auth-v1', s.sid, s.pub, s.agentPub);
+  s.pendingPassword = pw;
+  sendJson(CH.AUTH_RESPONSE, { proof: b64e(proof) });
+});
+
+async function onAuthResult(m) {
+  const s = S.sess; if (!s) return;
+  if (!m.ok) {
+    const e = $('pwErr');
+    e.textContent = `${m.reason || 'wrong password'}${m.attemptsLeft ? ` — ${m.attemptsLeft} attempt(s) left` : ''}`;
+    e.classList.remove('hide');
+    $('ovText').textContent = '';
+    $('pwIn').value = ''; $('pwIn').focus();
+    if (m.attemptsLeft === 0) sessOverlay('Too many wrong passwords. The agent closed the session.', true);
+    return;
+  }
+  // verify the agent's own proof: a relay that swapped keys cannot produce it
+  if (m.proof && s.pendingPassword) {
+    const { proof: expect } = await authProof(s.pendingPassword, s.salt, s.iterations,
+      'aegisdesk-auth-ack', s.sid, s.pub, s.agentPub);
+    const got = b64d(m.proof);
+    let same = got.length === expect.length;
+    for (let i = 0; same && i < got.length; i++) if (got[i] !== expect[i]) same = false;
+    if (!same) {
+      sessOverlay('Security check failed: the far end could not prove it knows the password. '
+        + 'Someone may be intercepting this connection.', true);
+      endSession('mitm suspected');
+      return;
+    }
+  }
+  s.pendingPassword = null;
+  s.authed = true;
+  $('sessAuth').classList.add('hide');
+  $('pwIn').value = '';
+  hideOverlay();
+  startSessionTimers();
+}
+
+/* ------------------------------------------------------------- rendering */
+function onScreenInfo(info) {
+  const s = S.sess; if (!s) return;
+  s.monitors = info.monitors || [];
+  s.monitor = info.active;
+  s.perms = info.permissions || {};
+  const sel = $('monSel');
+  const sig = s.monitors.map((m) => `${m.id}:${m.w}x${m.h}`).join('|');
+  if (sel.dataset.sig !== sig) {
+    sel.dataset.sig = sig;
+    sel.innerHTML = '';
+    for (const m of s.monitors) {
+      sel.append(el('option', { value: m.id },
+        m.id === 0 ? `All screens (${m.w}×${m.h})` : `Screen ${m.id} (${m.w}×${m.h})`));
+    }
+    sel.classList.toggle('hide', s.monitors.length < 2);
+  }
+  sel.value = String(s.monitor);
+  for (const [btn, perm] of [['filesBtn', 'files'], ['shellBtn', 'shell']]) {
+    $(btn).disabled = s.perms[perm] === false;
+    $(btn).title = s.perms[perm] === false ? 'disabled on that device' : '';
+  }
+}
+
+async function renderTiles(payload) {
+  const s = S.sess; if (!s) return;
+  const dv = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
+  const codec = dv.getUint8(1), flags = dv.getUint8(2);
+  const fw = dv.getUint16(5, false), fh = dv.getUint16(7, false);
+  const count = dv.getUint16(9, false);
+  let off = 11;
+
+  if (canvas.width !== fw || canvas.height !== fh) {
+    canvas.width = fw; canvas.height = fh;
+    s.width = fw; s.height = fh;
+    applyFit();
+  }
+  const mime = codec === 2 ? 'image/png' : 'image/jpeg';
+  const jobs = [];
+  for (let i = 0; i < count; i++) {
+    const x = dv.getUint16(off, false), y = dv.getUint16(off + 2, false);
+    const w = dv.getUint16(off + 4, false), h = dv.getUint16(off + 6, false);
+    const len = dv.getUint32(off + 8, false);
+    off += 12;
+    const bytes = payload.subarray(off, off + len);
+    off += len;
+    jobs.push(createImageBitmap(new Blob([bytes], { type: mime }))
+      .then((bmp) => ({ bmp, x, y, w, h })).catch(() => null));
+  }
+  const done = await Promise.all(jobs);
+  if (flags & 0x01) { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, fw, fh); }
+  for (const t of done) {
+    if (!t) continue;
+    ctx.drawImage(t.bmp, t.x, t.y, t.w, t.h);
+    t.bmp.close && t.bmp.close();
+  }
+  s.stats.frames++; s.stats.framesWindow = (s.stats.framesWindow || 0) + 1;
+  s.stats.tiles += count;
+  if ($('overlay').classList.contains('hide') === false && s.authed) hideOverlay();
+}
+
+function onCursor(c) {
+  const s = S.sess; if (!s) return;
+  const cur = $('cursor');
+  if (!c.visible) { cur.classList.add('hide'); return; }
+  const r = canvas.getBoundingClientRect();
+  const stageR = $('stage').getBoundingClientRect();
+  cur.classList.remove('hide');
+  cur.style.left = `${(r.left - stageR.left) + c.x * r.width}px`;
+  cur.style.top = `${(r.top - stageR.top) + c.y * r.height}px`;
+}
+
+function applyFit() {
+  const s = S.sess; if (!s) return;
+  canvas.classList.remove('native');
+  canvas.style.width = ''; canvas.style.height = '';
+  if (s.fit === 'native') canvas.classList.add('native');
+  else if (s.fit === 'fill') { canvas.style.width = '100%'; canvas.style.height = '100%'; }
+}
+
+function drawStats() {
+  const s = S.sess; if (!s) return;
+  const d = s.stats;
+  $('stats').textContent =
+    `${s.width}×${s.height}  ${d.fps} fps  ${d.kbps} KB/s\n`
+    + `rtt ${Math.round(d.rtt)} ms   total ${fmtBytes(d.bytes)}\n`
+    + `frames ${d.frames}  tiles ${d.tiles}`;
+}
+
+function toast(msg, level = 'info') {
+  if (!msg) return;
+  const t = el('div', { class: `toast ${level === 'error' ? 'error' : level === 'warn' ? 'warn' : ''}` }, msg);
+  $('toasts').append(t);
+  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 250); }, 4200);
+}
+
+/* ------------------------------------------------------------- toolbar */
+$('backBtn').addEventListener('click', () => endSession(null));
+$('hangupBtn').addEventListener('click', () => { sendJson(CH.CONTROL, { op: 'disconnect' }); endSession(null); });
+$('qualSel').addEventListener('change', (e) => sendJson(CH.CONTROL, { op: 'quality', mode: e.target.value }));
+$('monSel').addEventListener('change', (e) => sendJson(CH.CONTROL, { op: 'monitor', id: +e.target.value }));
+$('fitSel').addEventListener('change', (e) => { if (S.sess) { S.sess.fit = e.target.value; applyFit(); } });
+$('cadBtn').addEventListener('click', () => sendJson(CH.CONTROL, { op: 'cad' }));
+$('statsBtn').addEventListener('click', () => {
+  const s = S.sess; if (!s) return;
+  s.statsOn = !s.statsOn;
+  $('stats').classList.toggle('hide', !s.statsOn);
+  if (s.statsOn) drawStats();
+});
+
+/* ===========================================================================
+   Input
+   =========================================================================== */
+function normFromEvent(ev) {
+  const r = canvas.getBoundingClientRect();
+  return {
+    x: Math.min(1, Math.max(0, (ev.clientX - r.left) / Math.max(1, r.width))),
+    y: Math.min(1, Math.max(0, (ev.clientY - r.top) / Math.max(1, r.height))),
+  };
+}
+const canInput = () => S.sess && S.sess.authed && S.sess.perms.input !== false;
+
+let moveThrottle = 0, pendingMove = null;
+function sendMove(p) {
+  pendingMove = p;
+  if (moveThrottle) return;
+  moveThrottle = requestAnimationFrame(() => {
+    moveThrottle = 0;
+    if (pendingMove) { sendJson(CH.INPUT, { k: 'm', x: +pendingMove.x.toFixed(4), y: +pendingMove.y.toFixed(4) }); pendingMove = null; }
+  });
+}
+
+canvas.addEventListener('pointermove', (ev) => {
+  if (!canInput() || ev.pointerType === 'touch') return;
+  sendMove(normFromEvent(ev));
+});
+canvas.addEventListener('pointerdown', (ev) => {
+  if (!canInput()) return;
+  if (ev.pointerType === 'touch') return;              // touch handled separately
+  ev.preventDefault();
+  canvas.setPointerCapture(ev.pointerId);
+  focusKeyboardSink();
+  const p = normFromEvent(ev);
+  sendJson(CH.INPUT, { k: 'md', b: ev.button, x: +p.x.toFixed(4), y: +p.y.toFixed(4) });
+});
+canvas.addEventListener('pointerup', (ev) => {
+  if (!canInput() || ev.pointerType === 'touch') return;
+  const p = normFromEvent(ev);
+  sendJson(CH.INPUT, { k: 'mu', b: ev.button, x: +p.x.toFixed(4), y: +p.y.toFixed(4) });
+});
+canvas.addEventListener('contextmenu', (ev) => ev.preventDefault());
+canvas.addEventListener('wheel', (ev) => {
+  if (!canInput()) return;
+  ev.preventDefault();
+  const p = normFromEvent(ev);
+  const scale = ev.deltaMode === 1 ? 40 : ev.deltaMode === 2 ? 400 : 1;
+  sendJson(CH.INPUT, { k: 'w',
+    dx: Math.round(ev.deltaX * scale), dy: Math.round(ev.deltaY * scale),
+    x: +p.x.toFixed(4), y: +p.y.toFixed(4) });
+}, { passive: false });
+
+/* ---- keyboard ---- */
+const PASSTHROUGH_BLOCK = new Set(['F5', 'F11', 'F12']);       // let the browser keep these
+function onKey(ev, down) {
+  if (S.view !== 'session' || !canInput()) return;
+  if (ev.metaKey && (ev.key === 'v' || ev.key === 'c') && !ev.repeat) { /* let paste/copy work locally */ }
+  if (PASSTHROUGH_BLOCK.has(ev.code) && !ev.shiftKey) return;
+  ev.preventDefault();
+  const s = S.sess;
+  if (down) {
+    if (ev.repeat && s.keysDown.has(ev.code)) { sendJson(CH.INPUT, { k: 'kd', c: ev.code, r: true }); return; }
+    s.keysDown.add(ev.code);
+  } else s.keysDown.delete(ev.code);
+  sendJson(CH.INPUT, { k: down ? 'kd' : 'ku', c: ev.code });
+  renderSoftkeys();
+}
+window.addEventListener('keydown', (ev) => onKey(ev, true), { capture: true });
+window.addEventListener('keyup', (ev) => onKey(ev, false), { capture: true });
+window.addEventListener('blur', releaseAllKeys);
+
+function releaseAllKeys() {
+  const s = S.sess; if (!s) return;
+  for (const c of [...s.keysDown]) { sendJson(CH.INPUT, { k: 'ku', c }); }
+  s.keysDown.clear();
+  for (const c of [...s.sticky]) { sendJson(CH.INPUT, { k: 'ku', c }); }
+  s.sticky.clear();
+  renderSoftkeys();
+}
+
+/* paste straight into the remote machine */
+window.addEventListener('paste', (ev) => {
+  if (S.view !== 'session' || !canInput()) return;
+  const text = (ev.clipboardData || window.clipboardData).getData('text');
+  if (!text) return;
+  ev.preventDefault();
+  if (S.sess.perms.clipboard !== false) sendJson(CH.CLIPBOARD, { text });
+  sendJson(CH.INPUT, { k: 'txt', s: text });
+  toast(`Pasted ${text.length} character(s)`);
+});
+
+/* ---- touch: tap = click, drag = move+drag, 2-finger = scroll, long-press = right click ---- */
+(() => {
+  const stage = $('stage');
+  let touches = new Map(), longTimer = null, moved = false, downAt = 0, startP = null, dragging = false;
+  const TAP_MS = 260, MOVE_TOL = 12, LONG_MS = 520;
+
+  stage.addEventListener('touchstart', (ev) => {
+    if (!canInput()) return;
+    for (const t of ev.changedTouches) touches.set(t.identifier, { x: t.clientX, y: t.clientY });
+    if (touches.size === 1) {
+      const t = ev.touches[0];
+      startP = normFromEvent(t); moved = false; downAt = Date.now();
+      clearTimeout(longTimer);
+      longTimer = setTimeout(() => {
+        if (!moved) {
+          sendJson(CH.INPUT, { k: 'md', b: 2, x: +startP.x.toFixed(4), y: +startP.y.toFixed(4) });
+          sendJson(CH.INPUT, { k: 'mu', b: 2, x: +startP.x.toFixed(4), y: +startP.y.toFixed(4) });
+          navigator.vibrate && navigator.vibrate(18);
+          moved = true;   // consumed
+        }
+      }, LONG_MS);
+    }
+  }, { passive: true });
+
+  stage.addEventListener('touchmove', (ev) => {
+    if (!canInput()) return;
+    ev.preventDefault();
+    if (ev.touches.length === 1) {
+      const t = ev.touches[0];
+      const p = normFromEvent(t);
+      const prev = touches.get(t.identifier) || { x: t.clientX, y: t.clientY };
+      if (Math.hypot(t.clientX - prev.x, t.clientY - prev.y) > MOVE_TOL) moved = true;
+      if (moved && !dragging && Date.now() - downAt > TAP_MS) {
+        dragging = true;
+        sendJson(CH.INPUT, { k: 'md', b: 0, x: +p.x.toFixed(4), y: +p.y.toFixed(4) });
+      }
+      sendMove(p);
+    } else if (ev.touches.length === 2) {
+      moved = true;
+      const a = ev.touches[0], b = ev.touches[1];
+      const mid = normFromEvent({ clientX: (a.clientX + b.clientX) / 2, clientY: (a.clientY + b.clientY) / 2 });
+      const prevA = touches.get(a.identifier), prevB = touches.get(b.identifier);
+      if (prevA && prevB) {
+        const dy = ((a.clientY - prevA.y) + (b.clientY - prevB.y)) / 2;
+        if (Math.abs(dy) > 2) {
+          sendJson(CH.INPUT, { k: 'w', dx: 0, dy: Math.round(-dy * 6),
+            x: +mid.x.toFixed(4), y: +mid.y.toFixed(4) });
+        }
+      }
+      for (const t of ev.touches) touches.set(t.identifier, { x: t.clientX, y: t.clientY });
+    }
+  }, { passive: false });
+
+  stage.addEventListener('touchend', (ev) => {
+    if (!canInput()) return;
+    clearTimeout(longTimer);
+    for (const t of ev.changedTouches) touches.delete(t.identifier);
+    if (dragging) {
+      dragging = false;
+      if (startP) sendJson(CH.INPUT, { k: 'mu', b: 0, x: +startP.x.toFixed(4), y: +startP.y.toFixed(4) });
+    } else if (!moved && startP && Date.now() - downAt < TAP_MS) {
+      sendJson(CH.INPUT, { k: 'md', b: 0, x: +startP.x.toFixed(4), y: +startP.y.toFixed(4) });
+      sendJson(CH.INPUT, { k: 'mu', b: 0, x: +startP.x.toFixed(4), y: +startP.y.toFixed(4) });
+    }
+    if (!touches.size) { moved = false; startP = null; }
+  }, { passive: true });
+})();
+
+/* ---- on-screen modifier/function keys for phones ---- */
+const SOFTKEYS = [
+  { c: 'ControlLeft', l: 'Ctrl', sticky: true }, { c: 'AltLeft', l: 'Alt', sticky: true },
+  { c: 'ShiftLeft', l: 'Shift', sticky: true }, { c: 'MetaLeft', l: 'Win', sticky: true },
+  { c: 'Escape', l: 'Esc' }, { c: 'Tab', l: 'Tab' }, { c: 'Enter', l: '⏎' },
+  { c: 'Backspace', l: '⌫' }, { c: 'Delete', l: 'Del' },
+  { c: 'ArrowUp', l: '↑' }, { c: 'ArrowDown', l: '↓' }, { c: 'ArrowLeft', l: '←' }, { c: 'ArrowRight', l: '→' },
+  { c: 'F2', l: 'F2' }, { c: 'F5', l: 'F5' },
+];
+function renderSoftkeys() {
+  const bar = $('softkeys');
+  if (bar.classList.contains('hide')) return;
+  const s = S.sess;
+  if (bar.dataset.built !== '1') {
+    bar.innerHTML = '';
+    for (const k of SOFTKEYS) {
+      bar.append(el('button', { 'data-code': k.c, onclick: () => tapSoftkey(k) }, k.l));
+    }
+    bar.dataset.built = '1';
+  }
+  for (const b of bar.children) {
+    b.classList.toggle('held', !!(s && s.sticky.has(b.dataset.code)));
+  }
+}
+function tapSoftkey(k) {
+  const s = S.sess; if (!s) return;
+  if (k.sticky) {
+    if (s.sticky.has(k.c)) { s.sticky.delete(k.c); sendJson(CH.INPUT, { k: 'ku', c: k.c }); }
+    else { s.sticky.add(k.c); sendJson(CH.INPUT, { k: 'kd', c: k.c }); }
+  } else {
+    sendJson(CH.INPUT, { k: 'kd', c: k.c });
+    sendJson(CH.INPUT, { k: 'ku', c: k.c });
+    for (const c of [...s.sticky]) { sendJson(CH.INPUT, { k: 'ku', c }); s.sticky.delete(c); }
+  }
+  renderSoftkeys();
+}
+
+/* a hidden input gives phones a real keyboard; each character is sent as text */
+function focusKeyboardSink() {
+  if (!matchMedia('(pointer: coarse)').matches) return;
+  const inp = $('hiddenInput');
+  inp.value = '';
+  inp.focus({ preventScroll: true });
+}
+$('hiddenInput').addEventListener('input', (ev) => {
+  const v = ev.target.value;
+  if (!v) return;
+  ev.target.value = '';
+  if (canInput()) sendJson(CH.INPUT, { k: 'txt', s: v });
+});
+$('hiddenInput').addEventListener('keydown', (ev) => {
+  if (ev.key === 'Backspace' || ev.key === 'Enter') {
+    ev.preventDefault();
+    const code = ev.key === 'Enter' ? 'Enter' : 'Backspace';
+    sendJson(CH.INPUT, { k: 'kd', c: code });
+    sendJson(CH.INPUT, { k: 'ku', c: code });
+  }
+});
+$('kbBtn').addEventListener('click', () => {
+  const bar = $('softkeys');
+  bar.classList.toggle('hide');
+  if (!bar.classList.contains('hide')) { renderSoftkeys(); focusKeyboardSink(); }
+  else $('hiddenInput').blur();
+});
+
+/* ===========================================================================
+   Side panels: clipboard, files, shell, info
+   =========================================================================== */
+function openPanel(kind, title) {
+  const s = S.sess; if (!s) return;
+  s.panel = kind;
+  $('panel').classList.remove('hide');
+  $('panelTitle').textContent = title;
+  $('panelTabs').classList.add('hide');
+  $('panelBody').innerHTML = '';
+  ({ clip: renderClipPanel, files: renderFilesPanel, shell: renderShellPanel, info: renderInfoPanel }[kind] || (() => {}))();
+}
+function closePanel() {
+  const s = S.sess;
+  if (s) s.panel = null;
+  $('panel').classList.add('hide');
+}
+$('panelClose').addEventListener('click', closePanel);
+$('clipBtn').addEventListener('click', () => openPanel('clip', 'Clipboard'));
+$('filesBtn').addEventListener('click', () => { openPanel('files', 'Files'); sendJson(CH.FILE_CTL, { op: 'roots' }); });
+$('shellBtn').addEventListener('click', () => openPanel('shell', 'Remote shell'));
+$('infoBtn').addEventListener('click', () => { openPanel('info', 'System info'); sendJson(CH.SYSINFO, { op: 'report' }); });
+
+/* ---------------------------------------------------------- clipboard panel */
+function renderClipPanel() {
+  const s = S.sess; if (!s || s.panel !== 'clip') return;
+  const body = $('panelBody');
+  body.innerHTML = '';
+  const ta = el('textarea', { class: 'field', style: 'height:170px;font:12.5px var(--mono)' });
+  ta.value = s.clipboard || '';
+  body.append(
+    el('p', { class: 'sec' }, 'Remote clipboard'),
+    ta,
+    el('div', { style: 'display:flex;gap:8px;margin-top:10px;flex-wrap:wrap' },
+      el('button', { class: 'btn sm primary', onclick: () => { sendJson(CH.CLIPBOARD, { text: ta.value }); toast('Sent to the remote clipboard'); } }, 'Push to remote'),
+      el('button', { class: 'btn sm', onclick: async () => {
+        try { await navigator.clipboard.writeText(ta.value); toast('Copied here'); }
+        catch { ta.select(); document.execCommand('copy'); toast('Copied here'); }
+      } }, 'Copy to this device'),
+      el('button', { class: 'btn sm', onclick: async () => {
+        try { ta.value = await navigator.clipboard.readText(); }
+        catch { toast('This browser will not let a page read the clipboard - paste into the box instead', 'warn'); }
+      } }, 'Paste from this device'),
+      el('button', { class: 'btn sm', onclick: () => { sendJson(CH.INPUT, { k: 'txt', s: ta.value }); toast('Typed into the remote machine'); } }, 'Type it out')),
+    el('p', { class: 'sec', style: 'margin-top:16px' }, 'Note'),
+    el('div', { style: 'font-size:12.5px;color:var(--muted)' },
+      'The remote clipboard is polled about once a second, so a copy on that machine shows up here shortly after.'));
+}
+
+/* ---------------------------------------------------------- files panel */
+function renderFilesPanel() {
+  const body = $('panelBody');
+  body.innerHTML = '';
+  body.append(
+    el('div', { id: 'fCrumb', class: 'crumb' }, 'loading...'),
+    el('div', { id: 'fDrop', class: 'dropzone' }, 'Drop files here to upload, or ',
+      el('label', { style: 'color:var(--accent);cursor:pointer' }, 'browse...',
+        el('input', { type: 'file', multiple: true, class: 'hide',
+          onchange: (e) => uploadFiles([...e.target.files]) }))),
+    el('div', { id: 'fXfers' }),
+    el('div', { id: 'fList' }));
+
+  const dz = $('fDrop');
+  const stop = (e) => { e.preventDefault(); e.stopPropagation(); };
+  ['dragenter', 'dragover'].forEach((n) => dz.addEventListener(n, (e) => { stop(e); dz.classList.add('hot'); }));
+  ['dragleave', 'drop'].forEach((n) => dz.addEventListener(n, (e) => { stop(e); dz.classList.remove('hot'); }));
+  dz.addEventListener('drop', (e) => uploadFiles([...(e.dataTransfer.files || [])]));
+}
+
+function onFileCtl(m) {
+  const s = S.sess; if (!s) return;
+  switch (m.op) {
+    case 'roots-result':
+      s.files.sep = m.sep; s.files.roots = m;
+      if (!s.files.path) listDir(m.home || (m.drives && m.drives[0]) || '/');
+      break;
+    case 'list-result': renderFileList(m); break;
+    case 'get-begin': {
+      const x = s.files.xfers.get(m.xferId);
+      if (x) { x.size = m.size; x.name = m.name; x.parts = []; x.got = 0; renderXfers(); }
+      break;
+    }
+    case 'done': finishDownload(m.xferId); break;
+    case 'put-ready': {
+      const x = s.files.xfers.get(m.xferId);
+      if (x) pumpUpload(x);
+      break;
+    }
+    case 'ack': {
+      const x = s.files.xfers.get(m.xferId);
+      if (x) { x.acked = Math.max(x.acked || 0, m.seq); }
+      break;
+    }
+    case 'put-complete': {
+      const x = s.files.xfers.get(m.xferId);
+      toast(`Uploaded ${x ? x.name : ''} (${fmtBytes(m.bytes)})`);
+      s.files.xfers.delete(m.xferId); renderXfers();
+      if (s.files.path) listDir(s.files.path);
+      break;
+    }
+    case 'ok':
+      toast(`${m.action} done`);
+      if (s.files.path) listDir(s.files.path);
+      break;
+    case 'cancelled': s.files.xfers.delete(m.xferId); renderXfers(); break;
+    case 'error':
+      toast(m.message || 'file error', 'error');
+      if (m.xferId) { s.files.xfers.delete(m.xferId); renderXfers(); }
+      break;
+  }
+}
+
+function listDir(path) {
+  const s = S.sess; if (!s) return;
+  s.files.path = path;
+  sendJson(CH.FILE_CTL, { op: 'list', path });
+}
+
+function renderFileList(m) {
+  const s = S.sess;
+  if (!s || s.panel !== 'files') return;
+  s.files.path = m.path;
+  const sep = m.sep || '/';
+  const crumb = $('fCrumb');
+  if (crumb) {
+    crumb.innerHTML = '';
+    crumb.append(el('button', { class: 'btn sm', disabled: !m.parent,
+      onclick: () => listDir(m.parent) }, 'Up'));
+    crumb.append(el('span', { style: 'margin-left:6px' }, m.path));
+    crumb.append(el('span', { class: 'grow' }));
+    crumb.append(el('button', { class: 'btn sm', onclick: () => {
+      const n = prompt('New folder name:'); if (n) sendJson(CH.FILE_CTL, { op: 'mkdir', path: m.path + sep + n });
+    } }, '+ folder'));
+    crumb.append(el('button', { class: 'btn sm', onclick: () => {
+      const r = (s.files.roots || {});
+      const opts = [...(r.drives || []), ...((r.special || []).map((x) => x.path))];
+      const pick = prompt('Jump to:\n' + opts.map((o, i) => `${i + 1}. ${o}`).join('\n'), '1');
+      const idx = parseInt(pick, 10);
+      if (idx >= 1 && idx <= opts.length) listDir(opts[idx - 1]);
+    } }, 'Go to...'));
+  }
+
+  const list = $('fList');
+  if (!list) return;
+  const rows = m.entries.map((e) => {
+    const full = m.path.replace(/[\\/]+$/, '') + sep + e.n;
+    return el('tr', { class: 'clickable' },
+      el('td', {}, e.d ? 'DIR' : ''),
+      el('td', { onclick: () => e.d ? listDir(full) : download(full, e.n),
+                 style: 'cursor:pointer;word-break:break-all' }, e.n),
+      el('td', { style: 'text-align:right;color:var(--muted);white-space:nowrap' },
+        e.d ? '' : fmtBytes(e.s)),
+      el('td', { style: 'white-space:nowrap' },
+        e.d ? null : el('button', { class: 'btn sm icon', title: 'Download',
+          onclick: (ev) => { ev.stopPropagation(); download(full, e.n); } }, 'Get'),
+        el('button', { class: 'btn sm icon', title: 'Delete',
+          onclick: (ev) => { ev.stopPropagation();
+            if (confirm(`Delete ${e.n}?`)) sendJson(CH.FILE_CTL, { op: 'delete', path: full, recursive: e.d }); } }, 'Del')));
+  });
+  list.innerHTML = '';
+  list.append(el('table', { class: 'tbl' },
+    el('thead', {}, el('tr', {}, el('th', {}, ''), el('th', {}, 'Name'),
+      el('th', { style: 'text-align:right' }, 'Size'), el('th', {}, ''))),
+    el('tbody', {}, rows)));
+  if (m.truncated) list.append(el('div', { class: 'sec', style: 'margin-top:8px' },
+    'folder is very large - only the first entries are shown'));
+}
+
+function download(path, name) {
+  const s = S.sess; if (!s) return;
+  const id = s.files.nextId++;
+  s.files.xfers.set(id, { id, dir: 'down', name, path, parts: [], got: 0, size: 0, acked: 0 });
+  sendJson(CH.FILE_CTL, { op: 'get', xferId: id, path });
+  renderXfers();
+}
+
+function onFileData(payload) {
+  const s = S.sess; if (!s) return;
+  const dv = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
+  const id = dv.getUint32(0, false), seq = dv.getUint32(4, false);
+  const x = s.files.xfers.get(id);
+  if (!x || x.dir !== 'down') return;
+  x.parts[seq - 1] = payload.slice(8);      // indexed, so order cannot be lost
+  x.got += payload.length - 8;
+  if (seq % (WINDOW / 2) === 0) sendJson(CH.FILE_CTL, { op: 'ack', xferId: id, seq });
+  renderXfers(true);
+}
+
+function finishDownload(id) {
+  const s = S.sess; if (!s) return;
+  const x = s.files.xfers.get(id);
+  if (!x) return;
+  const blob = new Blob(x.parts.filter(Boolean));
+  const url = URL.createObjectURL(blob);
+  const a = el('a', { href: url, download: x.name || 'download' });
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 30000);
+  toast(`Downloaded ${x.name} (${fmtBytes(blob.size)})`);
+  s.files.xfers.delete(id);
+  renderXfers();
+}
+
+async function uploadFiles(files) {
+  const s = S.sess; if (!s || !files.length) return;
+  if (s.perms.filesReadOnly) { toast('That device is read-only for file transfer', 'warn'); return; }
+  const sep = s.files.sep || '/';
+  for (const f of files) {
+    const id = s.files.nextId++;
+    const dest = (s.files.path || '.').replace(/[\\/]+$/, '') + sep + f.name;
+    s.files.xfers.set(id, { id, dir: 'up', name: f.name, file: f, sent: 0, seq: 0, acked: 0, size: f.size });
+    sendJson(CH.FILE_CTL, { op: 'put', xferId: id, path: dest, size: f.size });
+  }
+  renderXfers();
+}
+
+async function pumpUpload(x) {
+  const s = S.sess; if (!s) return;
+  let offset = 0;
+  while (offset < x.file.size && S.sess === s && !s.closed) {
+    while (x.seq - (x.acked || 0) >= WINDOW) {
+      await new Promise((r) => setTimeout(r, 8));
+      if (S.sess !== s || s.closed) return;
+    }
+    const slice = x.file.slice(offset, offset + CHUNK);
+    const buf = new Uint8Array(await slice.arrayBuffer());
+    x.seq += 1;
+    const head = new Uint8Array(8);
+    const dv = new DataView(head.buffer);
+    dv.setUint32(0, x.id, false); dv.setUint32(4, x.seq, false);
+    await sendChannel(CH.FILE_DATA, cat(head, buf));
+    offset += buf.length;
+    x.sent = offset;
+    renderXfers(true);
+  }
+  sendJson(CH.FILE_CTL, { op: 'done', xferId: x.id });
+}
+
+let xferRaf = 0;
+function renderXfers(throttled) {
+  if (throttled) {
+    if (xferRaf) return;
+    xferRaf = requestAnimationFrame(() => { xferRaf = 0; renderXfers(); });
+    return;
+  }
+  const s = S.sess;
+  const box = $('fXfers');
+  if (!s || !box) return;
+  box.innerHTML = '';
+  for (const x of s.files.xfers.values()) {
+    const cur = x.dir === 'down' ? x.got : x.sent;
+    const pct = x.size ? Math.min(100, (cur / x.size) * 100) : 0;
+    box.append(el('div', { class: 'xfer' },
+      el('div', { style: 'display:flex;gap:8px' },
+        el('span', {}, x.dir === 'down' ? 'down' : 'up'),
+        el('span', { style: 'flex:1;word-break:break-all' }, x.name),
+        el('span', { style: 'color:var(--muted)' }, `${fmtBytes(cur)} / ${fmtBytes(x.size)}`),
+        el('button', { class: 'btn sm icon', onclick: () => {
+          sendJson(CH.FILE_CTL, { op: 'cancel', xferId: x.id });
+          s.files.xfers.delete(x.id); renderXfers();
+        } }, 'x')),
+      el('div', { class: 'track' }, el('div', { class: 'fill', style: `width:${pct}%` }))));
+  }
+}
+
+/* ---------------------------------------------------------- shell panel */
+function renderShellPanel() {
+  const s = S.sess; if (!s) return;
+  const body = $('panelBody');
+  body.innerHTML = '';
+  const out = el('div', { id: 'term' }, s.shell.buf || '');
+  const inp = el('input', { class: 'field', id: 'termIn', placeholder: 'command...  (up arrow for history)',
+    autocapitalize: 'off', autocomplete: 'off', spellcheck: 'false' });
+  body.append(
+    el('div', { style: 'display:flex;gap:6px;margin-bottom:8px' },
+      el('button', { class: 'btn sm primary', onclick: startShell }, s.shell.started ? 'Restart' : 'Start shell'),
+      el('button', { class: 'btn sm', onclick: () => { s.shell.buf = ''; $('term').textContent = ''; } }, 'Clear'),
+      el('button', { class: 'btn sm', onclick: () => sendJson(CH.SHELL_CTL, { op: 'stdin', data: '' }) }, 'Ctrl+C'),
+      el('button', { class: 'btn sm danger', onclick: () => { sendJson(CH.SHELL_CTL, { op: 'kill' }); s.shell.started = false; } }, 'Kill')),
+    out, inp);
+  out.scrollTop = out.scrollHeight;
+
+  const hist = s.shell.hist || (s.shell.hist = []);
+  let hi = hist.length;
+  inp.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Enter') {
+      const line = inp.value;
+      hist.push(line); hi = hist.length;
+      appendTerm(line + '\n');
+      sendJson(CH.SHELL_CTL, { op: 'stdin', data: line + '\n' });
+      inp.value = '';
+      if (!s.shell.started) toast('Start the shell first', 'warn');
+    } else if (ev.key === 'ArrowUp') {
+      ev.preventDefault(); if (hi > 0) inp.value = hist[--hi] || '';
+    } else if (ev.key === 'ArrowDown') {
+      ev.preventDefault(); hi = Math.min(hist.length, hi + 1); inp.value = hist[hi] || '';
+    } else if (ev.key === 'Tab') { ev.preventDefault(); }
+    ev.stopPropagation();
+  });
+  setTimeout(() => inp.focus(), 40);
+  if (!s.shell.started) startShell();
+}
+function startShell() {
+  const s = S.sess; if (!s) return;
+  s.shell.started = true;
+  sendJson(CH.SHELL_CTL, { op: 'start', cols: 100, rows: 30 });
+  appendTerm('\n-- shell started --\n');
+}
+function appendTerm(text) {
+  const s = S.sess; if (!s) return;
+  s.shell.buf = (s.shell.buf + text).slice(-200000);
+  const t = $('term');
+  if (t && s.panel === 'shell') {
+    const atBottom = t.scrollHeight - t.scrollTop - t.clientHeight < 40;
+    t.textContent = s.shell.buf;
+    if (atBottom) t.scrollTop = t.scrollHeight;
+  }
+}
+function onShellOut(payload) {
+  const stream = payload[0];
+  const text = td.decode(payload.subarray(1));
+  if (stream === 3) { appendTerm(`\n-- exited (${text}) --\n`); const s = S.sess; if (s) s.shell.started = false; return; }
+  appendTerm(text);
+}
+
+/* ---------------------------------------------------------- info panel */
+function renderInfoPanel() {
+  const body = $('panelBody');
+  body.innerHTML = '';
+  body.append(
+    el('div', { class: 'tabs' },
+      el('button', { class: 'sel', onclick: (e) => { selTab(e); sendJson(CH.SYSINFO, { op: 'report' }); } }, 'Overview'),
+      el('button', { onclick: (e) => { selTab(e); sendJson(CH.SYSINFO, { op: 'processes' }); } }, 'Processes'),
+      el('button', { onclick: (e) => { selTab(e); sendJson(CH.SYSINFO, { op: 'services' }); } }, 'Services'),
+      el('button', { onclick: (e) => { selTab(e); sendJson(CH.SYSINFO, { op: 'stats' }); } }, 'Stream')),
+    el('div', { id: 'infoBody', style: 'margin-top:10px' }, 'loading...'),
+    el('div', { style: 'margin-top:14px;display:flex;gap:8px;flex-wrap:wrap' },
+      el('button', { class: 'btn sm', onclick: () => sendJson(CH.CONTROL, { op: 'lock' }) }, 'Lock workstation'),
+      el('button', { class: 'btn sm', onclick: () => sendJson(CH.CONTROL, { op: 'keyframe' }) }, 'Refresh screen'),
+      el('button', { class: 'btn sm', onclick: () => sendJson(CH.CONTROL, { op: 'pause', on: true }) }, 'Pause video'),
+      el('button', { class: 'btn sm', onclick: () => sendJson(CH.CONTROL, { op: 'pause', on: false }) }, 'Resume')));
+}
+function selTab(ev) {
+  for (const b of ev.target.parentNode.children) b.classList.toggle('sel', b === ev.target);
+  $('infoBody').textContent = 'loading...';
+}
+
+function onSysinfo(m) {
+  const box = $('infoBody');
+  if (!box) return;
+  box.innerHTML = '';
+  if (m.op === 'report-result') {
+    const r = m.report, mt = r.metrics || {};
+    const dl = el('dl', { class: 'kv' });
+    const add = (k, v) => { if (v === undefined || v === null || v === '') return;
+      dl.append(el('dt', {}, k), el('dd', {}, String(v))); };
+    add('Hostname', r.hostname); add('OS', r.os); add('Architecture', r.arch);
+    add('CPU', r.processor || `${r.cores} cores`); add('Logged-in user', r.domain ? `${r.domain}\\${r.user}` : r.user);
+    add('IP addresses', (r.ips || []).join(', '));
+    add('CPU load', mt.cpu !== undefined ? `${mt.cpu}%` : null);
+    add('Memory', mt.mem !== undefined ? `${mt.mem}% of ${(mt.memTotalMb / 1024).toFixed(1)} GB` : null);
+    add('Disk', mt.disk !== undefined ? `${mt.disk}% used, ${mt.diskFreeGb} GB free` : null);
+    add('Battery', mt.battery !== undefined ? `${mt.battery}%${mt.charging ? ' (charging)' : ''}` : null);
+    add('Up since boot', mt.sysUptime ? fmtDur(mt.sysUptime) : null);
+    add('Agent uptime', mt.uptime ? fmtDur(mt.uptime) : null);
+    add('Python', r.python); add('Encoder', r.encoder);
+    box.append(dl);
+    if (r.disks && r.disks.length) {
+      box.append(el('p', { class: 'sec', style: 'margin-top:14px' }, 'Volumes'));
+      box.append(el('table', { class: 'tbl' },
+        el('thead', {}, el('tr', {}, el('th', {}, 'Mount'), el('th', {}, 'FS'),
+          el('th', { style: 'text-align:right' }, 'Free'), el('th', { style: 'text-align:right' }, 'Total'))),
+        el('tbody', {}, r.disks.map((d) => el('tr', {},
+          el('td', {}, d.mount), el('td', {}, d.fs),
+          el('td', { style: 'text-align:right' }, `${d.freeGb} GB`),
+          el('td', { style: 'text-align:right' }, `${d.totalGb} GB`))))));
+    }
+  } else if (m.op === 'processes-result') {
+    const rows = (m.processes || []).map((p) => el('tr', {},
+      el('td', {}, p.name), el('td', { style: 'color:var(--muted)' }, p.pid),
+      el('td', { style: 'text-align:right' }, `${p.memMb} MB`),
+      el('td', {}, el('button', { class: 'btn sm icon', title: 'End task',
+        onclick: () => { if (confirm(`End ${p.name} (pid ${p.pid})?`)) sendJson(CH.SYSINFO, { op: 'kill', pid: p.pid }); } }, 'End'))));
+    box.append(rows.length ? el('table', { class: 'tbl' },
+      el('thead', {}, el('tr', {}, el('th', {}, 'Process'), el('th', {}, 'PID'),
+        el('th', { style: 'text-align:right' }, 'Memory'), el('th', {}, ''))),
+      el('tbody', {}, rows)) : el('div', { class: 'sec' }, 'no data (install psutil on the agent)'));
+  } else if (m.op === 'services-result') {
+    const rows = (m.services || []).map((sv) => el('tr', {},
+      el('td', {}, sv.display || sv.name), el('td', { style: 'color:var(--muted)' }, sv.status),
+      el('td', { style: 'color:var(--muted)' }, sv.start)));
+    box.append(rows.length ? el('table', { class: 'tbl' },
+      el('thead', {}, el('tr', {}, el('th', {}, 'Service'), el('th', {}, 'State'), el('th', {}, 'Startup'))),
+      el('tbody', {}, rows)) : el('div', { class: 'sec' }, 'Windows only (and needs psutil)'));
+  } else if (m.op === 'stats-result') {
+    const st = m.stats;
+    const dl = el('dl', { class: 'kv' });
+    for (const [k, v] of Object.entries(st)) dl.append(el('dt', {}, k), el('dd', {}, String(v)));
+    box.append(dl);
+  } else if (m.op === 'kill-result') {
+    toast(m.ok ? `Ended ${m.name}` : `Could not end process: ${m.error}`, m.ok ? 'info' : 'error');
+    sendJson(CH.SYSINFO, { op: 'processes' });
+  }
+}
+
+/* ===========================================================================
+   Admin
+   =========================================================================== */
+$('adminBtn').addEventListener('click', () => { show('admin'); renderAdmin(); });
+$('adminBack').addEventListener('click', () => show('fleet'));
+
+async function renderAdmin() {
+  const body = $('adminBody');
+  body.innerHTML = 'loading...';
+  try {
+    const [ops, key, audit] = await Promise.all([
+      api('/api/operators'), api('/api/enroll-key'), api('/api/audit?limit=120'),
+    ]);
+    body.innerHTML = '';
+
+    const wsScheme = location.protocol === 'https:' ? 'wss' : 'ws';
+    const enrollCard = el('div', { class: 'card', style: 'max-width:none;margin-bottom:16px' },
+      el('h1', { style: 'font-size:16px' }, 'Enroll a new computer'),
+      el('p', { class: 'sub' }, 'Run this on the machine you want to support, then it appears in the fleet list.'),
+      el('pre', { style: 'background:#05080c;padding:12px;border-radius:8px;overflow:auto;font-size:12.5px' },
+        `pip install -r requirements.txt\npython -m aegis_agent setup --relay ${wsScheme}://${location.host} --enroll-key ${key.enrollKey}\npython -m aegis_agent install\npython -m aegis_agent run`),
+      el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' },
+        el('button', { class: 'btn sm', onclick: async () => {
+          try { await navigator.clipboard.writeText(key.enrollKey); toast('Enrollment key copied'); }
+          catch { alert(key.enrollKey); } } }, 'Copy key'),
+        el('button', { class: 'btn sm danger', onclick: async () => {
+          if (!confirm('Rotate the enrollment key? Already-enrolled devices keep working; new installs need the new key.')) return;
+          await api('/api/enroll-key/rotate', { method: 'POST' }); renderAdmin(); } }, 'Rotate key')));
+    body.append(enrollCard);
+
+    const opRows = ops.operators.map((o) => el('tr', {},
+      el('td', {}, o.username), el('td', {}, o.role),
+      el('td', { style: 'color:var(--muted)' }, o.lastLogin ? fmtAgo(o.lastLogin) : 'never'),
+      el('td', {}, el('button', { class: 'btn sm danger', onclick: async () => {
+        if (!confirm(`Remove operator ${o.username}?`)) return;
+        try { await api(`/api/operators/${o.username}`, { method: 'DELETE' }); renderAdmin(); }
+        catch (e) { alert(e.message); } } }, 'Remove'))));
+
+    const uName = el('input', { class: 'field', placeholder: 'username', autocapitalize: 'off' });
+    const uPass = el('input', { class: 'field', placeholder: 'password (min 8)', type: 'password' });
+    const uRole = el('select', { class: 'field' },
+      el('option', { value: 'operator' }, 'operator - can connect'),
+      el('option', { value: 'admin' }, 'admin - can also manage'),
+      el('option', { value: 'viewer' }, 'viewer - read-only listing'));
+
+    body.append(el('div', { class: 'card', style: 'max-width:none;margin-bottom:16px' },
+      el('h1', { style: 'font-size:16px' }, 'Operators'),
+      el('table', { class: 'tbl', style: 'margin:10px 0' },
+        el('thead', {}, el('tr', {}, el('th', {}, 'User'), el('th', {}, 'Role'),
+          el('th', {}, 'Last login'), el('th', {}, ''))),
+        el('tbody', {}, opRows)),
+      el('div', { style: 'display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;align-items:center' },
+        uName, uPass, uRole,
+        el('button', { class: 'btn primary', onclick: async () => {
+          try {
+            await api('/api/operators', { method: 'POST',
+              body: { username: uName.value.trim(), password: uPass.value, role: uRole.value } });
+            renderAdmin();
+          } catch (e) { alert(e.message); } } }, 'Add'))));
+
+    const cur = el('input', { class: 'field', type: 'password', placeholder: 'current password' });
+    const nxt = el('input', { class: 'field', type: 'password', placeholder: 'new password (min 8)' });
+    body.append(el('div', { class: 'card', style: 'max-width:none;margin-bottom:16px' },
+      el('h1', { style: 'font-size:16px' }, 'Change my password'),
+      el('div', { style: 'display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-top:10px' },
+        cur, nxt, el('button', { class: 'btn primary', onclick: async () => {
+          try { await api('/api/password', { method: 'POST', body: { current: cur.value, next: nxt.value } });
+            toast('Password changed'); cur.value = nxt.value = ''; }
+          catch (e) { alert(e.message); } } }, 'Change'))));
+
+    const aRows = (audit.entries || []).map((a) => el('tr', {},
+      el('td', { style: 'white-space:nowrap;color:var(--muted)' }, new Date(a.ts).toLocaleString()),
+      el('td', {}, a.kind),
+      el('td', {}, a.operator || a.username || ''),
+      el('td', { style: 'font:12px var(--mono)' }, a.deviceId || ''),
+      el('td', { style: 'color:var(--muted)' },
+        [a.reason, a.ip, a.durationMs ? fmtDur(a.durationMs / 1000) : null,
+         a.bytesToViewer ? fmtBytes(a.bytesToViewer) : null].filter(Boolean).join(' / '))));
+    body.append(el('div', { class: 'card', style: 'max-width:none' },
+      el('h1', { style: 'font-size:16px' }, 'Audit log'),
+      el('p', { class: 'sub' }, 'Every session, login and enrollment. Also written to data/audit.jsonl on the relay.'),
+      el('div', { style: 'max-height:420px;overflow:auto;margin-top:10px' },
+        el('table', { class: 'tbl' },
+          el('thead', {}, el('tr', {}, el('th', {}, 'When'), el('th', {}, 'Event'),
+            el('th', {}, 'Who'), el('th', {}, 'Device'), el('th', {}, 'Detail'))),
+          el('tbody', {}, aRows)))));
+  } catch (e) {
+    body.innerHTML = '';
+    body.append(el('div', { class: 'err' }, e.message));
+  }
+}
+
+/* ===========================================================================
+   Boot
+   =========================================================================== */
+window.addEventListener('resize', () => { applyFit(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) releaseAllKeys(); });
+window.addEventListener('beforeunload', () => {
+  if (S.sess) { wsSend({ t: 'close', sid: S.sess.sid }); }
+});
+
+(async function boot() {
+  if (!subtle) {
+    document.body.innerHTML = '<div style="padding:40px;font:15px/1.6 sans-serif;color:#e6edf3">'
+      + '<b>This page needs Web Crypto.</b><br>Open it over <code>https://</code> or from '
+      + '<code>http://localhost</code> - browsers disable encryption APIs on plain-http remote origins, '
+      + 'and AegisDesk will not fall back to sending your screen unencrypted.</div>';
+    return;
+  }
+  if (S.token) {
+    try {
+      const me = await api('/api/me');
+      S.operator = me.username; S.role = me.role;
+      startFleet();
+      return;
+    } catch { store.del('aegis.token'); S.token = ''; }
+  }
+  show('login');
+  $('lu').focus();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+# Deploy to Fly.io:
+#   fly launch --no-deploy --name my-aegisdesk
+#   fly volumes create aegis_data --size 1 --region <your-region>
+#   fly deploy
+# Fly terminates TLS for you, so the relay itself stays plain HTTP internally
+# and the browser still gets wss://.
+
+app = "aegisdesk-relay"
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "7443"
+  AEGIS_DATA_DIR = "/data"
+  AEGIS_TRUST_PROXY = "true"
+  AEGIS_LOG = "info"
+
+[[mounts]]
+  source = "aegis_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 7443
+  force_https = true
+  auto_stop_machines = false     # a sleeping relay means offline agents
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [http_service.http_options.response]
+    pristine = true              # don't let Fly rewrite websocket headers
+
+[[http_service.checks]]
+  interval = "30s"
+  timeout = "5s"
+  grace_period = "10s"
+  method = "GET"
+  path = "/healthz"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
