@@ -1,4 +1,6 @@
-# AegisDesk
+<p align="center"><img src=".github/assets/banner.png" alt="aegisdesk banner" width="100%"></p>
+
+# <img src=".github/assets/icon.png" width="38" align="top" alt=""> AegisDesk
 
 A self-hosted remote support and device management tool. Same job as AnyDesk or
 TeamViewer — see a screen, take over the mouse and keyboard, move files, run a
